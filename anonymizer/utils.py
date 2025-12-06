@@ -1,5 +1,5 @@
 """
-Stałe i funkcje pomocnicze dla biblioteki pllum_anonymizer.
+Stałe i funkcje pomocnicze dla biblioteki anonymizer.
 """
 
 from typing import Dict, List, Set

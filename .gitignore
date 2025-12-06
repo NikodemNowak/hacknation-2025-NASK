@@ -1,6 +1,8 @@
 # Created by https://www.toptal.com/developers/gitignore/api/linux,python,windows
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux,python,windows
 
+models/
+
 ### Linux ###
 *~
 

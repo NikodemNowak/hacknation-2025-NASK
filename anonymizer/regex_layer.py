@@ -10,7 +10,7 @@ Obsługiwane typy danych:
 - Numer dowodu osobistego -> {document-number}
 
 Użycie:
-    from pllum_anonymizer.regex_layer import RegexAnonymizer
+    from anonymizer.regex_layer import RegexAnonymizer
     
     anonymizer = RegexAnonymizer()
     text = "Mój PESEL to 90010112345, a email jan@example.com"

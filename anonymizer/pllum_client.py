@@ -6,7 +6,7 @@ Obsługuje dwa tryby:
 2. Offline mode - używa lokalnie pobranego modelu
 
 Użycie (API mode):
-    from pllum_anonymizer.pllum_client import PLLUMClient
+    from anonymizer.pllum_client import PLLUMClient
     
     client = PLLUMClient(api_key="TWOJ_KLUCZ")
     response = client.generate("Przerób tekst...")
@@ -17,6 +17,7 @@ Użycie (Offline mode):
 """
 
 import os
+from pathlib import Path
 from typing import Optional, Dict, Any, List
 
 
@@ -44,22 +45,27 @@ class PLLUMClient:
         Inicjalizacja klienta PLLUM.
         
         Args:
-            api_key: Klucz API (Ocp-Apim-Subscription-Key). 
-                     Można też ustawić przez zmienną API_KEY.
+            api_key: Klucz API (Ocp-Apim-Subscription-Key).
+                     Może być ustawiony w .env (PLLUM_API_KEY / API_KEY).
             base_url: URL bazowy API (domyślnie: API organizatora)
             model_name: Nazwa modelu (domyślnie: pllum-12b-nc-chat)
             offline: Czy używać trybu offline (lokalny model)
             temperature: Temperatura generacji (0.0-1.0)
             max_tokens: Maksymalna liczba tokenów odpowiedzi
         """
+        self._load_env()
         self.offline = offline
         self.temperature = temperature
         self.max_tokens = max_tokens
         
         # Konfiguracja
-        self.api_key = api_key or os.environ.get("API_KEY")
-        self.base_url = base_url or self.DEFAULT_BASE_URL
-        self.model_name = model_name or self.DEFAULT_MODEL_NAME
+        self.api_key = api_key or os.environ.get("PLLUM_API_KEY") or os.environ.get("API_KEY")
+        self.base_url = (
+            base_url or os.environ.get("PLLUM_BASE_URL") or self.DEFAULT_BASE_URL
+        )
+        self.model_name = (
+            model_name or os.environ.get("PLLUM_MODEL_NAME") or self.DEFAULT_MODEL_NAME
+        )
         
         # Inicjalizacja klienta
         self._llm = None
@@ -68,6 +74,22 @@ class PLLUMClient:
         
         if not offline:
             self._init_api_client()
+
+    @staticmethod
+    def _load_env(env_path: str = ".env") -> None:
+        """
+        Wczytuje zmienne z pliku .env, jeśli istnieje (bez dodatkowych zależności).
+        """
+        path = Path(env_path)
+        if not path.exists():
+            return
+
+        for line in path.read_text().splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#") or "=" not in stripped:
+                continue
+            key, value = stripped.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip())
     
     def _init_api_client(self):
         """Inicjalizuje klienta API (LangChain + OpenAI)."""
@@ -76,7 +98,7 @@ class PLLUMClient:
         
         if not self.api_key:
             raise ValueError(
-                "Brak klucza API! Ustaw api_key lub zmienną API_KEY. "
+                "Brak klucza API! Ustaw api_key lub zmienne PLLUM_API_KEY / API_KEY. "
                 "Alternatywnie użyj offline=True dla trybu lokalnego."
             )
         

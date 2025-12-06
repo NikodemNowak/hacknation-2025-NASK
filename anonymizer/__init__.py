@@ -1,11 +1,11 @@
 """
-pllum_anonymizer - Narzędzie do anonimizacji danych dla modelu PLLUM.
+anonymizer - Narzędzie do anonimizacji danych dla modelu PLLUM.
 
 Biblioteka do anonimizacji tekstów w języku polskim. Zastępuje dane wrażliwe
 tokenami (np. {name}, {city}) oraz wspiera generację danych syntetycznych.
 
 Użycie:
-    from pllum_anonymizer import Anonymizer
+    from anonymizer import Anonymizer
     
     model = Anonymizer()
     text = "Nazywam się Jan Kowalski, PESEL 90010112345."

@@ -3,6 +3,11 @@
 Biblioteka do anonimizacji tekstów w języku polskim dla modelu PLLUM.  
 Zastępuje dane wrażliwe tokenami (np. `{name}`, `{city}`) oraz wspiera generację danych syntetycznych.
 
+### Nowy pipeline (hybrydowy)
+- Krok 1: **RegEx** – twarde dane o stałym formacie (PESEL, email, konta).
+- Krok 2: **AI NER (HerBERT)** – kontekstowe encje (imiona, miasta, firmy) -> tagi.
+- Krok 3: **LLM Synthesis (PLLuM)** – opcjonalne podmiany tagów na realistyczne dane.
+
 ## Wymagania
 
 - Python 3.9+
@@ -45,10 +50,12 @@ python download_models.py
 ### Podstawowa anonimizacja
 
 ```python
-from pllum_anonymizer import Anonymizer
+from anonymizer import Anonymizer
 
 # Inicjalizacja (modele ładują się automatycznie)
 model = Anonymizer()
+# albo z własnym modelem NER (fine-tune HerBERT):
+# model = Anonymizer(ner_model_path="/path/do/modelu")
 
 # Anonimizacja tekstu
 text = "Nazywam się Jan Kowalski, PESEL 90010112345."
@@ -60,24 +67,24 @@ print(result)
 ### Generacja danych syntetycznych
 
 ```python
-from pllum_anonymizer import Anonymizer
+from anonymizer import Anonymizer
 
-model = Anonymizer()
+model = Anonymizer(use_synthetic=True)
 
 # Najpierw anonimizacja
 text = "Mieszkam w Warszawie przy ulicy Długiej 5."
 anonymized = model.anonymize(text)
-# "Mieszkam w Warszawie przy ulicy Długiej 5."
+# "Mieszkam w {city} przy ulicy {address}."
 
-# Potem synteza (gdy NER będzie zaimplementowany)
+# Potem synteza (PLLuM -> realistyczne dane)
 synthetic = model.synthesize(anonymized)
-# "Mieszkam w Krakowie przy ulicy Krótkiej 10."
+# "Mieszkam w Poznaniu przy ulicy Krótkiej 10."
 ```
 
 ### Przetwarzanie wsadowe
 
 ```python
-from pllum_anonymizer import Anonymizer
+from anonymizer import Anonymizer
 
 model = Anonymizer()
 texts = [
@@ -88,6 +95,11 @@ texts = [
 
 results = model.anonymize_batch(texts)
 ```
+
+### Konfiguracja modeli
+- PLLuM API: ustaw zmienne `.env` / środowiskowe `PLLUM_API_KEY`, `PLLUM_BASE_URL` (opcjonalnie), `PLLUM_MODEL_NAME` (opcjonalnie).
+- Ścieżka do własnego NER (HerBERT): podaj w kodzie `Anonymizer(ner_model_path="/path/do/modelu")` lub ustaw `NER_MODEL_PATH=/path/do/modelu`.
+- Tryb CPU/GPU: domyślnie działa na CPU, jeśli dostępny jest GPU zostanie użyty automatycznie przez pipeline HF.
 
 ## Obsługiwane typy danych
 
@@ -102,7 +114,7 @@ results = model.anonymize_batch(texts)
 | `{credit-card-number}` | Karta kredytowa | 1234 5678 9012 3456 |
 | `{document-number}` | Numer dowodu | ABC123456 |
 
-### Warstwa NER (placeholder)
+### Warstwa NER (HerBERT)
 
 | Tag | Opis |
 |-----|------|
@@ -116,11 +128,11 @@ results = model.anonymize_batch(texts)
 ## Architektura
 
 ```
-pllum_anonymizer/
+anonymizer/
 ├── __init__.py       # Eksportuje Anonymizer
 ├── core.py           # Główna klasa Anonymizer (hybrydowa)
 ├── regex_layer.py    # Warstwa RegEx (szybka, stałe formaty)
-├── ner_layer.py      # Warstwa NER (kontekstowa, placeholder)
+├── ner_layer.py      # Warstwa NER (kontekstowa, HerBERT + HF pipeline)
 ├── synthetic.py      # Generator danych syntetycznych
 └── utils.py          # Stałe i funkcje pomocnicze
 ```

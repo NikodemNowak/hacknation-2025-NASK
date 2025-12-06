@@ -12,7 +12,7 @@ Pokazuje jak działa nasz anonymizer i porównuje z oczekiwanym wynikiem.
 import random
 import os
 from typing import List, Tuple
-from regex import RegexAnonymizer, anonymize_text
+from anonymizer.regex_layer import RegexAnonymizer, anonymize_text
 
 
 def load_data(directory: str = "nask_train") -> Tuple[List[str], List[str]]:

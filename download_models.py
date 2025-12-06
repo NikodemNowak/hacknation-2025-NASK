@@ -71,7 +71,7 @@ def verify_offline_mode() -> bool:
     
     try:
         # Importuj bibliotekę
-        from pllum_anonymizer import Anonymizer
+        from anonymizer import Anonymizer
         
         # Stwórz anonymizer
         anonymizer = Anonymizer(offline=True)
@@ -98,7 +98,7 @@ def verify_offline_mode() -> bool:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Pobiera model PLLUM dla biblioteki pllum_anonymizer"
+        description="Pobiera model PLLUM dla biblioteki anonymizer"
     )
     parser.add_argument(
         "--verify", 
@@ -114,14 +114,14 @@ def main():
     args = parser.parse_args()
     
     print("="*60)
-    print("🚀 pllum_anonymizer - Pobieranie modelu PLLUM")
+    print("🚀 anonymizer - Pobieranie modelu PLLUM")
     print("="*60)
     print()
     print("Ten skrypt pobiera model PLLUM potrzebny do działania w trybie offline.")
     print("UWAGA: Model ma ~24GB, pobieranie może zająć dużo czasu!")
     print()
     print("💡 Jeśli masz klucz API, możesz używać modelu hostowanego bez pobierania:")
-    print("   from pllum_anonymizer import PLLUMClient")
+    print("   from anonymizer import PLLUMClient")
     print("   client = PLLUMClient(api_key='TWOJ_KLUCZ')")
     
     success = True

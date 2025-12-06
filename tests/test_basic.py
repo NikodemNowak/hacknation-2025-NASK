@@ -1,5 +1,5 @@
 """
-Podstawowe testy dla biblioteki pllum_anonymizer.
+Podstawowe testy dla biblioteki anonymizer.
 
 Uruchomienie:
     pytest tests/test_basic.py -v
@@ -13,22 +13,22 @@ class TestLibraryImport:
     
     def test_import_main_module(self):
         """Test importu głównego modułu."""
-        import pllum_anonymizer
-        assert hasattr(pllum_anonymizer, "__version__")
+        import anonymizer
+        assert hasattr(anonymizer, "__version__")
     
     def test_import_anonymizer_class(self):
         """Test importu klasy Anonymizer."""
-        from pllum_anonymizer import Anonymizer
+        from anonymizer import Anonymizer
         assert Anonymizer is not None
     
     def test_import_regex_anonymizer(self):
         """Test importu RegexAnonymizer."""
-        from pllum_anonymizer import RegexAnonymizer
+        from anonymizer import RegexAnonymizer
         assert RegexAnonymizer is not None
     
     def test_import_synthetic_generator(self):
         """Test importu SyntheticGenerator."""
-        from pllum_anonymizer import SyntheticGenerator
+        from anonymizer import SyntheticGenerator
         assert SyntheticGenerator is not None
 
 
@@ -37,7 +37,7 @@ class TestAnonymizerBasic:
     
     def test_anonymizer_initialization(self):
         """Test tworzenia instancji Anonymizer."""
-        from pllum_anonymizer import Anonymizer
+        from anonymizer import Anonymizer
         
         anonymizer = Anonymizer()
         assert anonymizer is not None
@@ -46,7 +46,7 @@ class TestAnonymizerBasic:
     
     def test_anonymizer_repr(self):
         """Test reprezentacji tekstowej."""
-        from pllum_anonymizer import Anonymizer
+        from anonymizer import Anonymizer
         
         anonymizer = Anonymizer()
         repr_str = repr(anonymizer)
@@ -54,7 +54,7 @@ class TestAnonymizerBasic:
     
     def test_get_supported_tags(self):
         """Test pobierania listy obsługiwanych tagów."""
-        from pllum_anonymizer import Anonymizer
+        from anonymizer import Anonymizer
         
         anonymizer = Anonymizer()
         tags = anonymizer.get_supported_tags()
@@ -71,7 +71,7 @@ class TestRegexAnonymization:
     @pytest.fixture
     def anonymizer(self):
         """Fixture tworząca anonymizer."""
-        from pllum_anonymizer import Anonymizer
+        from anonymizer import Anonymizer
         return Anonymizer(use_ner=False)  # Tylko RegEx
     
     def test_pesel_anonymization(self, anonymizer):
@@ -121,7 +121,7 @@ class TestSyntheticGenerator:
     @pytest.fixture
     def generator(self):
         """Fixture tworząca generator z stałym seedem."""
-        from pllum_anonymizer import SyntheticGenerator
+        from anonymizer import SyntheticGenerator
         return SyntheticGenerator(seed=42)
     
     def test_synthesize_name(self, generator):
@@ -161,7 +161,7 @@ class TestBatchProcessing:
     
     def test_anonymize_batch(self):
         """Test anonimizacji wsadowej."""
-        from pllum_anonymizer import Anonymizer
+        from anonymizer import Anonymizer
         
         anonymizer = Anonymizer(use_ner=False)
         texts = [
@@ -179,7 +179,7 @@ class TestBatchProcessing:
     
     def test_synthesize_batch(self):
         """Test syntezy wsadowej."""
-        from pllum_anonymizer import SyntheticGenerator
+        from anonymizer import SyntheticGenerator
         
         generator = SyntheticGenerator(seed=42)
         texts = [
@@ -199,7 +199,7 @@ class TestTagFormat:
     
     def test_curly_brackets_default(self):
         """Test że domyślnie używane są nawiasy klamrowe."""
-        from pllum_anonymizer import Anonymizer
+        from anonymizer import Anonymizer
         
         anonymizer = Anonymizer(use_ner=False, use_brackets=False)
         result = anonymizer.anonymize("PESEL 90010112345")
@@ -209,7 +209,7 @@ class TestTagFormat:
     
     def test_square_brackets_option(self):
         """Test opcji nawiasów kwadratowych."""
-        from pllum_anonymizer import Anonymizer
+        from anonymizer import Anonymizer
         
         anonymizer = Anonymizer(use_ner=False, use_brackets=True)
         result = anonymizer.anonymize("PESEL 90010112345")
