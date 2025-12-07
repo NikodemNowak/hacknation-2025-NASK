@@ -67,7 +67,7 @@ class AnonymizationResult:
 
 
 def clean_to_digits(text: str) -> str:
-    """Zamienia zniekształcenia OCR na cyfry."""
+    """Convert OCR-distorted characters to digits."""
     result = text
     for char, digit in OCR_REPLACEMENTS.items():
         result = result.replace(char, digit)
@@ -90,11 +90,11 @@ class RegexAnonymizer:
 
     def __init__(self, use_brackets: bool = False):
         """
-        Inicjalizacja anonimizera.
+        Initialize anonymizer.
 
         Args:
-            use_brackets: Jeśli True, używa nawiasów kwadratowych [tag],
-                         jeśli False, używa klamrowych {tag}
+            use_brackets: If True, uses square brackets [tag],
+                         if False, uses curly braces {tag}
         """
         self.use_brackets = use_brackets
         self._compile_patterns()
@@ -110,7 +110,7 @@ class RegexAnonymizer:
             rf'\b[{DIGIT_LIKE}]{{11}}\b', re.IGNORECASE
         )
 
-        # Daty (ogólne): dd.mm.yyyy, dd-mm-yyyy, yyyy-mm-dd, dd/mm/yyyy
+        # Dates (general): dd.mm.yyyy, dd-mm-yyyy, yyyy-mm-dd, dd/mm/yyyy
         self.date_pattern = re.compile(
             r'\b(?:'
             r'(?:[0-3]?\d[.\-\/][0-1]?\d[.\-\/](?:19|20)?\d{2})'
@@ -119,7 +119,7 @@ class RegexAnonymizer:
             r')\b'
         )
 
-        # Email - standardowy format z domeną
+        # Email - standard format with domain
         self.email_pattern = re.compile(
             r'[a-zA-Z0-9._%+\-łśżźćńóęą|!]{1,64}'
             r'@'
@@ -129,29 +129,29 @@ class RegexAnonymizer:
             re.IGNORECASE,
         )
 
-        # Telefon - różne polskie formaty (+ jest częścią tagu)
-        # Format: +48 XXX XXX XXX lub XXX XXX XXX lub XXX-XXX-XXX itp.
+        # Phone - various Polish formats (+ is part of tag)
+        # Format: +48 XXX XXX XXX or XXX XXX XXX or XXX-XXX-XXX etc.
+        # Also handles OCR distortions (letters instead of digits)
         self.phone_pattern = re.compile(
-            rf'(?:\+\s*)?'  # opcjonalny +
-            rf'(?:[{DIGIT_LIKE}]{{2}}\s+)?'  # opcjonalne 48
-            rf'(?:[{DIGIT_LIKE}]{{2,3}}[\s\-\.]*)'  # pierwszy segment
-            rf'(?:[{DIGIT_LIKE}]{{2,3}}[\s\-\.]*)'  # drugi segment
-            rf'(?:[{DIGIT_LIKE}]{{2,3}}[\s\-\.]*)?'  # trzeci segment (opcjonalny)
-            rf'[{DIGIT_LIKE}]{{2,3}}',  # ostatni segment
+            rf'(?:\+\s*)?'  # optional +
+            rf'(?:[{DIGIT_LIKE}]{{2}}[\s\-\.]*)?'  # optional 48
+            rf'[{DIGIT_LIKE}]{{2,3}}[\s\-\.]*'  # first segment
+            rf'[{DIGIT_LIKE}]{{2,3}}[\s\-\.]*'  # second segment
+            rf'[{DIGIT_LIKE}]{{2,3}}',  # third segment
             re.IGNORECASE,
         )
 
-        # Numer konta bankowego (IBAN polski) - 26 cyfr ze zniekształceniami
+        # Bank account number (Polish IBAN) - 26 digits with OCR distortions
         self.bank_account_pattern = re.compile(
             rf'\b'
-            rf'(?:PL\s*)?'  # opcjonalny prefix PL
-            rf'(?:[{DIGIT_LIKE}]{{2,4}}[\s\-]?){{5,7}}'  # grupy 2-4 cyfr
-            rf'[{DIGIT_LIKE}]{{1,4}}'  # ostatnia grupa
+            rf'(?:PL\s*)?'  # optional PL prefix
+            rf'(?:[{DIGIT_LIKE}]{{2,4}}[\s\-]?){{5,7}}'  # groups of 2-4 digits
+            rf'[{DIGIT_LIKE}]{{1,4}}'  # last group
             rf'\b',
             re.IGNORECASE,
         )
 
-        # Karta kredytowa - 16 cyfr ze zniekształceniami
+        # Credit card - 16 digits with OCR distortions
         self.credit_card_pattern = re.compile(
             rf'\b'
             rf'[{DIGIT_LIKE}]{{4}}[\s\-]?'
@@ -162,8 +162,8 @@ class RegexAnonymizer:
             re.IGNORECASE,
         )
 
-        # Numer dowodu osobistego (polski)
-        # Format: ABC123456 lub 1234-5678-9012
+        # ID card number (Polish)
+        # Format: ABC123456 or 1234-5678-9012
         self.document_number_pattern = re.compile(
             rf'\b'
             rf'(?:'
@@ -189,11 +189,11 @@ class RegexAnonymizer:
         cleaned = re.sub(r'[\s\-\.\(\)\+]', '', text)
         cleaned = clean_to_digits(cleaned)
 
-        # Usuń prefix 48 jeśli jest
+        # Remove prefix 48 if present
         if cleaned.startswith('48') and len(cleaned) > 9:
             cleaned = cleaned[2:]
 
-        # Polski numer to 9 cyfr
+        # Polish number is 9 digits
         if len(cleaned) == 9 and cleaned.isdigit():
             return True
         return False
@@ -211,8 +211,8 @@ class RegexAnonymizer:
             cleaned = cleaned[2:]
         cleaned = clean_to_digits(cleaned)
 
-        # IBAN polski ma 26 cyfr (24 + 2 cyfry kontrolne)
-        # Ale akceptujemy też krótsze formaty (20-26 cyfr)
+        # Polish IBAN has 26 digits (24 + 2 check digits)
+        # But we also accept shorter formats (20-26 digits)
         if len(cleaned) >= 20 and len(cleaned) <= 28 and cleaned.isdigit():
             return True
         return False
@@ -227,10 +227,10 @@ class RegexAnonymizer:
         """Validate if text can be a document number."""
         cleaned = re.sub(r'[\s\-]', '', text.upper())
 
-        # Format: ABC123456 (3 litery + 6 cyfr) lub AB1234567 (2 litery + 7 cyfr)
+        # Format: ABC123456 (3 letters + 6 digits) or AB1234567 (2 letters + 7 digits)
         if re.match(r'^[A-Z]{2,3}[0-9]{4,7}$', clean_to_digits(cleaned)):
             return True
-        # Format: 1234-5678-9012 (12 cyfr)
+        # Format: 1234-5678-9012 (12 digits)
         cleaned_digits = clean_to_digits(cleaned)
         if re.match(r'^\d{12}$', cleaned_digits):
             return True
@@ -254,22 +254,22 @@ class RegexAnonymizer:
         # 1. Email
         result = self._replace_emails(result)
 
-        # 2. Numer konta bankowego
+        # 2. Bank account number
         result = self._replace_bank_accounts(result)
 
-        # 3. Karta kredytowa
+        # 3. Credit card
         result = self._replace_credit_cards(result)
 
-        # 4. Daty
+        # 4. Dates
         result = self._replace_dates(result)
 
         # 5. PESEL
         result = self._replace_pesels(result)
 
-        # 6. Numer dowodu
+        # 6. Document number
         result = self._replace_document_numbers(result)
 
-        # 7. Telefon
+        # 7. Phone
         result = self._replace_phones(result)
 
         return result
@@ -369,15 +369,15 @@ class RegexAnonymizer:
 
 def anonymize_text(text: str, use_brackets: bool = False) -> str:
     """
-    Funkcja pomocnicza do szybkiej anonimizacji tekstu.
+    Helper function for quick text anonymization.
 
     Args:
-        text: Tekst do anonimizacji
-        use_brackets: Czy używać nawiasów kwadratowych [tag] (True)
-                     czy klamrowych {tag} (False)
+        text: Text to anonymize
+        use_brackets: Whether to use square brackets [tag] (True)
+                     or curly braces {tag} (False)
 
     Returns:
-        Zanonimizowany tekst
+        Anonymized text
     """
     anonymizer = RegexAnonymizer(use_brackets=use_brackets)
     return anonymizer.anonymize(text)

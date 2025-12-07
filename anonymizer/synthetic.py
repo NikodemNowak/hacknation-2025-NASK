@@ -62,12 +62,25 @@ ZASADY KRYTYCZNE:
    - Jeśli {age} i {date-of-birth} są w tekście → muszą być logicznie zgodne (wiek 45 lat → urodzony ~1979).
    - Jeśli {name} i {surname} dotyczą tej samej osoby → zachowaj spójną parę imię-nazwisko.
 
-3. ODMIANA PRZEZ PRZYPADKI:
+3. ODMIANA PRZEZ PRZYPADKI (BARDZO WAŻNE!):
+   IMIONA I NAZWISKA:
    - "Mama {surname}" → dopełniacz: "Mama Kowalskiego" lub "Mama Kowalskiej" (dla kobiety).
    - "z {name}" → narzędnik: "z Anną", "z Piotrem".
    - "o {name}" → miejscownik: "o Annie", "o Piotrze".
    - "do {name}" → dopełniacz: "do Anny", "do Piotra".
    - "{name} {surname}" bez kontekstu → mianownik: "Anna Kowalska", "Jan Kowalski".
+   
+   MIASTA (ZAWSZE ODMIENIAJ!):
+   - "w {city}" → miejscownik: "w Warszawie", "we Wrocławiu", "w Krakowie", "w Poznaniu".
+   - "do {city}" → dopełniacz: "do Warszawy", "do Wrocławia", "do Krakowa".
+   - "z {city}" → dopełniacz: "z Warszawy", "z Wrocławia", "z Gdańska".
+   - "przy {city}" → miejscownik: "przy Warszawie" (ale lepiej: "w pobliżu Warszawy").
+   - UWAGA: przed W/F używaj "we" zamiast "w": "we Wrocławiu", "we Włocławku".
+   
+   ADRESY:
+   - "przy {address}" → miejscownik: "przy ul. Kwiatowej 15".
+   - "na {address}" → miejscownik: "na ul. Głównej 10".
+   - "pod {address}" → narzędnik: "pod adresem ul. Polna 5".
 
 4. REALISTYCZNE WARTOŚCI:
    - {age} dla dorosłego: 18-80 lat.
@@ -97,6 +110,12 @@ Wynik: Spotkałem się z Piotrem w Krakowie. Rozmawialiśmy o Piotrze przez godz
 
 Tekst: {name} {surname} ({sex}, {age} lat) zgłosił się do lekarza z powodu {health}.
 Wynik: Anna Wiśniewska (kobieta, 34 lata) zgłosiła się do lekarza z powodu bólu głowy.
+
+Tekst: Mieszka podobno w {city} przy {address}. Przyjechał z {city}.
+Wynik: Mieszka podobno we Wrocławiu przy ul. Leśnej 15/3. Przyjechał z Poznania.
+
+Tekst: {surname}, lat {age}, twierdzi że zwolnienie jest legitne.
+Wynik: Kowalski, lat 52, twierdzi że zwolnienie jest legitne.
 
 Tekst:
 {input_text}
