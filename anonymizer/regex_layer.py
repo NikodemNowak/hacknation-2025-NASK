@@ -84,13 +84,12 @@ class RegexAnonymizer:
             re.IGNORECASE
         )
         
-        # Telefon - różne polskie formaty
+        # Telefon - różne polskie formaty (+ jest częścią tagu)
         self.phone_pattern = re.compile(
+            r'(?:\+\s*)?'  # opcjonalny + na początku (włączony do matcha)
             r'(?:'
-                r'(?:\+\s*[4hA]\s*[8B]\s*|\b[4hA][8B]\s+)?'
-                r'(?:'
-                    r'(?:[0-9oOlI!|BSsAaEeGgqQhHzZ]{2,3}[\s\-\.]*){3,4}[0-9oOlI!|BSsAaEeGgqQhHzZ]{2,3}'
-                r')'
+                r'(?:[4hA]\s*[8B]\s+)?'  # opcjonalne 48
+                r'(?:[0-9oOlI!|BSsAaEeGgqQhHzZ]{2,3}[\s\-\.]*){3,4}[0-9oOlI!|BSsAaEeGgqQhHzZ]{2,3}'
             r')',
             re.IGNORECASE
         )

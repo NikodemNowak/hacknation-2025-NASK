@@ -60,6 +60,7 @@ class NERAnonymizer:
         self._model = None
 
         # Mapowanie etykiet NER na nasze tagi
+        # Stare etykiety (standardowe NER)
         self._label_to_tag = {
             "PER": "name",
             "PERSON": "name",
@@ -69,6 +70,16 @@ class NERAnonymizer:
             "ORG": "company",
             "ORGANIZATION": "company",
             "MISC": None,
+            # Nowe etykiety z modelu herbert_ner_v2
+            "NAME": "name",
+            "SURNAME": "surname",
+            "CITY": "city",
+            "ADDRESS": "address",
+            "AGE": "age",
+            "COMPANY": "company",
+            "DOCUMENT-NUMBER": "document-number",
+            "JOB-TITLE": "job-title",
+            "SCHOOL-NAME": "school-name",
         }
 
     def _format_tag(self, tag: str) -> str:

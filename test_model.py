@@ -1,59 +1,63 @@
-import os
-
 from anonymizer.core import Anonymizer
 
-# Upewnij się, że ścieżka jest poprawna (względem miejsca uruchomienia skryptu)
-MODEL_PATH = "models/herbert_ner_model"
+# Nowy model v2
+MODEL_PATH = "models/herbert_ner_v2"
+TRAIN_DATA_PATH = "nask_train/original.txt"
+
+
+def load_all_lines(file_path: str) -> list[str]:
+    """Wczytuje wszystkie linie z pliku."""
+    with open(file_path, "r", encoding="utf-8") as f:
+        return [line.strip() for line in f if line.strip()]
+
 
 def run_test():
     print(f"🔄 Ładowanie modelu z: {MODEL_PATH}...")
 
-    # 1. Inicjalizacja z Twoim modelem
-    # Jeśli prompt zadziałał poprawnie, Anonymizer powinien przyjmować parametr model_path
+    # 1. Inicjalizacja z nowym modelem (use_brackets=True jak w Colab)
     try:
-        anonymizer = Anonymizer(ner_model_path=MODEL_PATH)
+        anonymizer = Anonymizer(ner_model_path=MODEL_PATH, use_brackets=True)
         print("✅ Model załadowany pomyślnie!")
-        # Włącz NER od razu, żeby mieć dostęp do debugowania encji
+        # Włącz NER od razu
         anonymizer._init_ner_layer()
     except Exception as e:
         print(f"❌ Błąd ładowania modelu: {e}")
-        print("Czy folder models/herbert_ner_model zawiera plik config.json?")
+        print("Czy folder models/herbert_ner_v2 zawiera plik config.json?")
         return
 
-    # 2. Przykładowe teksty do testów
-    test_cases = [
-        # Prosty test imienia (NER)
-        "Spotkałem dzisiaj Jana Kowalskiego w sklepie.",
+    # 2. Wczytaj WSZYSTKIE linie z danych treningowych
+    print(f"\n📂 Wczytywanie wszystkich linii z: {TRAIN_DATA_PATH}...")
+    try:
+        test_cases = load_all_lines(TRAIN_DATA_PATH)
+        print(f"✅ Wczytano {len(test_cases)} linii\n")
+    except Exception as e:
+        print(f"❌ Błąd wczytywania danych: {e}")
+        return
 
-        # Test hybrydowy (Regex + NER)
-        "Pani Anna Nowak (PESEL: 90010112345) mieszka w Warszawie na ulicy Złotej.",
+    print("=" * 80)
+    print("           TESTY ANONIMIZACJI (RegEx + NER herbert_ner_v2)")
+    print("=" * 80)
 
-        # Test kontekstu (czy nie usunie 'Odry' jako rzeki)
-        "Mój kolega Marek pojechał nad rzekę Odrę.",
-    ]
+    for i, text in enumerate(test_cases, 1):
+        print(f"\n{'─' * 80}")
+        print(f"📝 PRZYKŁAD {i}/{len(test_cases)}")
+        print(f"{'─' * 80}")
+        
+        # Wyświetl oryginał (skrócony jeśli za długi)
+        display_text = text if len(text) <= 500 else text[:500] + "..."
+        print(f"\n🔵 ORYGINAŁ:\n{display_text}")
 
-    print("\n--- ROZPOCZYNAM TESTY ANONIMIZACJI ---\n")
-
-    for text in test_cases:
-        print(f"📝 ORYGINAŁ: {text}")
-
-        # Diagnostyka warstwy NER
-        if anonymizer.use_ner and anonymizer._ner_layer:
-            entities = anonymizer._ner_layer.extract_entities(text, debug=True)
-            if entities:
-                print("🔍 Encje NER:")
-                for ent in entities:
-                    print(
-                        f"  - {ent.label} ({ent.start}-{ent.end}): '{ent.text}' -> {ent.tag}"
-                    )
-            else:
-                print("ℹ️  Brak encji zwróconych przez model NER.")
-
-        # Uruchomienie anonimizacji (zwróć uwagę czy wyniki są poprawne)
+        # Uruchomienie anonimizacji (Regex najpierw, potem NER)
         result = anonymizer.anonymize(text)
+        
+        # Wyświetl wynik (skrócony jeśli za długi)
+        display_result = result if len(result) <= 500 else result[:500] + "..."
+        print(f"\n🟢 ZANONIMIZOWANE:\n{display_result}")
 
-        print(f"🔒 WYNIK:    {result}")
-        print("-" * 50)
+    print(f"\n{'=' * 80}")
+    print("                              KONIEC TESTÓW")
+    print(f"{'=' * 80}\n")
+
 
 if __name__ == "__main__":
     run_test()
