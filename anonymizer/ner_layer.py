@@ -9,7 +9,11 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 import torch
-from transformers import AutoModelForTokenClassification, AutoTokenizer, pipeline
+from transformers import (
+    AutoModelForTokenClassification,
+    AutoTokenizer,
+    pipeline,
+)
 
 
 @dataclass
@@ -52,7 +56,9 @@ class NERAnonymizer:
         self.use_brackets = use_brackets
         self.local_files_only = local_files_only
         self.device = (
-            device if device is not None else (0 if torch.cuda.is_available() else -1)
+            device
+            if device is not None
+            else (0 if torch.cuda.is_available() else -1)
         )
 
         self._pipeline = None
@@ -139,7 +145,9 @@ class NERAnonymizer:
         normalized = normalized.split("-")[-1]
         return self._label_to_tag.get(normalized)
 
-    def extract_entities(self, text: str, debug: bool = False) -> List[NEREntity]:
+    def extract_entities(
+        self, text: str, debug: bool = False
+    ) -> List[NEREntity]:
         """
         Wyodrębnia encje z tekstu i mapuje je na tagi anonimizacji.
         """

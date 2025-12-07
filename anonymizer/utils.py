@@ -11,13 +11,13 @@ from typing import Dict, List, Set
 
 # Tagi obsługiwane przez warstwę regex (dane o stałym formacie)
 REGEX_TAGS: Set[str] = {
-    "pesel",               # PESEL (11 cyfr)
-    "email",               # Adresy e-mail
-    "phone",               # Numery telefonów
-    "bank-account",        # Numery kont bankowych (IBAN)
+    "pesel",  # PESEL (11 cyfr)
+    "email",  # Adresy e-mail
+    "phone",  # Numery telefonów
+    "bank-account",  # Numery kont bankowych (IBAN)
     "credit-card-number",  # Numery kart kredytowych
-    "document-number",     # Numery dowodów osobistych / paszportów
-    "date",                # Daty (ogólne)
+    "document-number",  # Numery dowodów osobistych / paszportów
+    "date",  # Daty (ogólne)
 }
 
 # Tagi obsługiwane przez warstwę NER/LLM (kontekstowe)
@@ -59,15 +59,16 @@ ALL_TAGS: Set[str] = REGEX_TAGS | NER_TAGS
 # FUNKCJE POMOCNICZE
 # =============================================================================
 
+
 def format_tag(tag: str, use_brackets: bool = False) -> str:
     """
     Formatuje tag anonimizacji.
-    
+
     Args:
         tag: Nazwa tagu (np. "name", "pesel")
         use_brackets: Jeśli True, używa nawiasów kwadratowych [tag],
                      jeśli False, używa klamrowych {tag}
-    
+
     Returns:
         Sformatowany tag
     """
@@ -84,12 +85,13 @@ def is_valid_tag(tag: str) -> bool:
 def normalize_text(text: str) -> str:
     """
     Normalizuje tekst do przetwarzania.
-    
+
     - Usuwa nadmiarowe białe znaki
     - Normalizuje znaki specjalne
     """
     # Zamień wiele spacji na jedną
     import re
+
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
 

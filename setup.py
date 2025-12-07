@@ -19,7 +19,11 @@ setup(
     author="all_in()",
     author_email="",
     description="Narzędzie do anonimizacji danych dla modelu PLLUM - Dane bez twarzy",
-    long_description=open("README.md", encoding="utf-8").read() if __import__("os").path.exists("README.md") else "",
+    long_description=(
+        open("README.md", encoding="utf-8").read()
+        if __import__("os").path.exists("README.md")
+        else ""
+    ),
     long_description_content_type="text/markdown",
     url="https://github.com/NikodemNowak/hacknation-2025-NASK",
     classifiers=[

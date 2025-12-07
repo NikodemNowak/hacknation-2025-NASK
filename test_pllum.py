@@ -54,15 +54,32 @@ def main():
         print("=" * 100)
 
         # Oryginał
-        print("\n🔵 ORYGINAŁ:\n" + (src if len(src) <= 800 else src[:800] + "..."))
+        print(
+            "\n🔵 ORYGINAŁ:\n"
+            + (src if len(src) <= 800 else src[:800] + "...")
+        )
         # Wersja referencyjna NASK
-        print("\n🟣 REFERENCJA NASK (anon):\n" + (ref if len(ref) <= 800 else ref[:800] + "..."))
+        print(
+            "\n🟣 REFERENCJA NASK (anon):\n"
+            + (ref if len(ref) <= 800 else ref[:800] + "...")
+        )
         # Nasza anonimizacja (regex + NER)
-        print("\n🟢 NASZE (Regex + NER):\n" + (anonymized if len(anonymized) <= 800 else anonymized[:800] + "..."))
+        print(
+            "\n🟢 NASZE (Regex + NER):\n"
+            + (
+                anonymized
+                if len(anonymized) <= 800
+                else anonymized[:800] + "..."
+            )
+        )
         # Nasza synteza (regex + NER + PLLuM/lokalny fallback)
         print(
             "\n🟡 NASZE (Regex + NER + PLLuM/fallback):\n"
-            + (anonymized_llm if len(anonymized_llm) <= 800 else anonymized_llm[:800] + "...")
+            + (
+                anonymized_llm
+                if len(anonymized_llm) <= 800
+                else anonymized_llm[:800] + "..."
+            )
         )
         print()
 

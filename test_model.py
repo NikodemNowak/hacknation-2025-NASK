@@ -47,32 +47,42 @@ def run_test():
         # Anonimizacja
         result = anonymizer.anonymize(text)
         results.append((i, text, result))
-        
+
         # Progress bar co 50 linii
         if i % 50 == 0 or i == total:
             elapsed = time.time() - start_time
             rate = i / elapsed if elapsed > 0 else 0
             eta = (total - i) / rate if rate > 0 else 0
-            print(f"\r⏳ Postęp: {i}/{total} ({100*i/total:.1f}%) | "
-                  f"Prędkość: {rate:.1f} linii/s | ETA: {eta:.0f}s", end="", flush=True)
+            print(
+                f"\r⏳ Postęp: {i}/{total} ({100*i/total:.1f}%) | "
+                f"Prędkość: {rate:.1f} linii/s | ETA: {eta:.0f}s",
+                end="",
+                flush=True,
+            )
 
     print()  # Nowa linia po progress bar
-    
+
     elapsed_total = time.time() - start_time
-    print(f"\n✅ Przetworzono {total} linii w {elapsed_total:.1f}s ({total/elapsed_total:.1f} linii/s)\n")
+    print(
+        f"\n✅ Przetworzono {total} linii w {elapsed_total:.1f}s ({total/elapsed_total:.1f} linii/s)\n"
+    )
 
     # Wyświetl wyniki
     for idx, original, anonymized in results:
         print(f"\n{'─' * 80}")
         print(f"📝 PRZYKŁAD {idx}/{total}")
         print(f"{'─' * 80}")
-        
+
         # Wyświetl oryginał (skrócony jeśli za długi)
-        display_text = original if len(original) <= 500 else original[:500] + "..."
+        display_text = (
+            original if len(original) <= 500 else original[:500] + "..."
+        )
         print(f"\n🔵 ORYGINAŁ:\n{display_text}")
-        
+
         # Wyświetl wynik (skrócony jeśli za długi)
-        display_result = anonymized if len(anonymized) <= 500 else anonymized[:500] + "..."
+        display_result = (
+            anonymized if len(anonymized) <= 500 else anonymized[:500] + "..."
+        )
         print(f"\n🟢 ZANONIMIZOWANE:\n{display_result}")
 
     print(f"\n{'=' * 80}")

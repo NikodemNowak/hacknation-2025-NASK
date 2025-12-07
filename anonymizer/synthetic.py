@@ -84,7 +84,9 @@ class SyntheticGenerator:
         if self._pllum_client is not None or not self.use_llm:
             return
 
-        kwargs = {k: v for k, v in self._client_params.items() if v is not None}
+        kwargs = {
+            k: v for k, v in self._client_params.items() if v is not None
+        }
         self._pllum_client = PLLUMClient(**kwargs)
 
     def _init_data(self):
@@ -262,7 +264,9 @@ class SyntheticGenerator:
 
     def _gen_phone(self) -> str:
         """Generuje losowy numer telefonu."""
-        prefix = random.choice(["50", "51", "53", "60", "66", "69", "72", "78", "79", "88"])
+        prefix = random.choice(
+            ["50", "51", "53", "60", "66", "69", "72", "78", "79", "88"]
+        )
         number = "".join([str(random.randint(0, 9)) for _ in range(7)])
         return f"+48 {prefix}{number[:3]} {number[3:6]} {number[6:]}"
 
@@ -270,7 +274,9 @@ class SyntheticGenerator:
         """Generuje losowy email."""
         name = random.choice(self.names).lower()
         surname = random.choice(self.surnames).lower()
-        domain = random.choice(["gmail.com", "wp.pl", "onet.pl", "o2.pl", "interia.pl"])
+        domain = random.choice(
+            ["gmail.com", "wp.pl", "onet.pl", "o2.pl", "interia.pl"]
+        )
         separator = random.choice([".", "_", ""])
         return f"{name}{separator}{surname}@{domain}"
 
@@ -337,7 +343,9 @@ class SyntheticGenerator:
             try:
                 self._ensure_client()
                 if self._pllum_client:
-                    prompt = self.prompt_template.format(input_text=anonymized_text)
+                    prompt = self.prompt_template.format(
+                        input_text=anonymized_text
+                    )
                     response = self._pllum_client.generate(prompt)
                     if response:
                         return response.strip()
