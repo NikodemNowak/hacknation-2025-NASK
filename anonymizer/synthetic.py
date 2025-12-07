@@ -19,9 +19,19 @@ from typing import Dict, List, Optional
 from .pllum_client import PLLUMClient
 
 DEFAULT_PROMPT = (
-    "You are a data assistant. In the given text, replace all tokens like "
-    "{{name}}, {{city}} with realistic Polish data, preserving grammar. "
-    "Do not change the rest of the text.\n\nText:\n{input_text}\n\nResult:"
+    "Jesteś asystentem danych po polsku. Zamień tokeny (np. {name}, {surname}, "
+    "{age}, {city}, {address}, {company}, {phone}, {email}, {pesel}, {date}) "
+    "na realistyczne, lecz fikcyjne dane w poprawnych formach gramatycznych.\n"
+    "- Zachowaj sens zdania i kontekst; odmieniaj imiona/nazwiska przez przypadki.\n"
+    "- Ustal płeć po kontekście (np. 'ona', zawód żeński) i dobieraj odpowiednie formy.\n"
+    "- Ten sam token w tekście ma być spójny (ta sama osoba/dana).\n"
+    "- Nie zmieniaj pozostałego tekstu, nie dodawaj komentarzy ani cudzysłowów.\n"
+    "\nPrzykłady:\n"
+    "Tekst: Mama {surname} ma na imię {name}. O niej mówią, że jest pracowita.\n"
+    "Wynik: Mama Kowalskiego ma na imię Anna. O niej mówią, że jest pracowita.\n"
+    "Tekst: Spotkałem się z {name} w {city} w dniu {date}.\n"
+    "Wynik: Spotkałem się z Piotrem w Krakowie w dniu 14.03.2021.\n"
+    "\nTekst:\n{input_text}\n\nWynik:"
 )
 
 
@@ -329,7 +339,10 @@ class SyntheticGenerator:
         return bool(re.search(r"\{[a-z\-]+\}|\[[a-z\-]+\]", text))
 
     def _normalize_to_curly(self, text: str) -> str:
-        """Convert [tag] to {tag} so LLM prompt stays consistent."""
+        """
+        Convert [tag] to {tag} so LLM prompt stays consistent and can
+        reuse the same value for repeated tags.
+        """
         return re.sub(r"\[([a-z\-]+)\]", r"{\1}", text)
 
     def _replace_tags_locally(self, anonymized_text: str) -> str:
