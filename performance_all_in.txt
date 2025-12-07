@@ -5,3 +5,10 @@ Hardware:
 API:
   Czy użyto API PLLUM: NIE
   Model: HerBERT (local) + Regex
+
+Run: 2025-12-07 09:45:10 UTC
+  Wejście: dane_final_test/orig_final.txt
+  Wyjście: dane_final_test/anonymized_final.txt
+  Linie: 317
+  Czas: 35.77 s
+  Warstwy: RegEx=ON, NER=ON (syntetyczna: OFF)
