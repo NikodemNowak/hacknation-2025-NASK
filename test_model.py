@@ -1,3 +1,4 @@
+import time
 from anonymizer.core import Anonymizer
 
 # Nowy model v2
@@ -29,7 +30,8 @@ def run_test():
     print(f"\n📂 Wczytywanie wszystkich linii z: {TRAIN_DATA_PATH}...")
     try:
         test_cases = load_all_lines(TRAIN_DATA_PATH)
-        print(f"✅ Wczytano {len(test_cases)} linii\n")
+        total = len(test_cases)
+        print(f"✅ Wczytano {total} linii\n")
     except Exception as e:
         print(f"❌ Błąd wczytywania danych: {e}")
         return
@@ -38,20 +40,39 @@ def run_test():
     print("           TESTY ANONIMIZACJI (RegEx + NER herbert_ner_v2)")
     print("=" * 80)
 
+    start_time = time.time()
+    results = []
+
     for i, text in enumerate(test_cases, 1):
+        # Anonimizacja
+        result = anonymizer.anonymize(text)
+        results.append((i, text, result))
+        
+        # Progress bar co 50 linii
+        if i % 50 == 0 or i == total:
+            elapsed = time.time() - start_time
+            rate = i / elapsed if elapsed > 0 else 0
+            eta = (total - i) / rate if rate > 0 else 0
+            print(f"\r⏳ Postęp: {i}/{total} ({100*i/total:.1f}%) | "
+                  f"Prędkość: {rate:.1f} linii/s | ETA: {eta:.0f}s", end="", flush=True)
+
+    print()  # Nowa linia po progress bar
+    
+    elapsed_total = time.time() - start_time
+    print(f"\n✅ Przetworzono {total} linii w {elapsed_total:.1f}s ({total/elapsed_total:.1f} linii/s)\n")
+
+    # Wyświetl wyniki
+    for idx, original, anonymized in results:
         print(f"\n{'─' * 80}")
-        print(f"📝 PRZYKŁAD {i}/{len(test_cases)}")
+        print(f"📝 PRZYKŁAD {idx}/{total}")
         print(f"{'─' * 80}")
         
         # Wyświetl oryginał (skrócony jeśli za długi)
-        display_text = text if len(text) <= 500 else text[:500] + "..."
+        display_text = original if len(original) <= 500 else original[:500] + "..."
         print(f"\n🔵 ORYGINAŁ:\n{display_text}")
-
-        # Uruchomienie anonimizacji (Regex najpierw, potem NER)
-        result = anonymizer.anonymize(text)
         
         # Wyświetl wynik (skrócony jeśli za długi)
-        display_result = result if len(result) <= 500 else result[:500] + "..."
+        display_result = anonymized if len(anonymized) <= 500 else anonymized[:500] + "..."
         print(f"\n🟢 ZANONIMIZOWANE:\n{display_result}")
 
     print(f"\n{'=' * 80}")

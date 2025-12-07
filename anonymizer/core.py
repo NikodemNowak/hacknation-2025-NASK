@@ -19,6 +19,7 @@ Użycie:
 """
 
 import os
+import re
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
@@ -168,7 +169,26 @@ class Anonymizer:
             if self._synthetic_generator:
                 result = self._synthetic_generator.synthesize(result)
 
+        # 4. Łączenie zduplikowanych sąsiadujących tagów
+        result = self._merge_duplicate_tags(result)
+
         return result
+
+    def _merge_duplicate_tags(self, text: str) -> str:
+        """
+        Łączy zduplikowane sąsiadujące tagi w jeden.
+        
+        Np. '[name] [name]' -> '[name]'
+            '{city} {city} {city}' -> '{city}'
+        """
+        if self.use_brackets:
+            # Pattern dla [tag] [tag] -> [tag]
+            pattern = r'\[([^\]]+)\](?:\s*\[\1\])+'
+            return re.sub(pattern, r'[\1]', text)
+        else:
+            # Pattern dla {tag} {tag} -> {tag}
+            pattern = r'\{([^}]+)\}(?:\s*\{\1\})+'
+            return re.sub(pattern, r'{\1}', text)
 
     def anonymize_batch(self, texts: List[str]) -> List[str]:
         """
