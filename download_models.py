@@ -35,20 +35,20 @@ def download_pllum_model(
         True if successful
     """
     print(f"\n{'='*60}")
-    print(f"📦 Pobieranie modelu PLLUM: {model_name}")
-    print("⚠️  UWAGA: Ten model jest bardzo duży (~24GB)!")
+    print(f"Pobieranie modelu PLLUM: {model_name}")
+    print("UWAGA: Ten model jest bardzo duży (~24GB)!")
     print('=' * 60)
 
     try:
         from transformers import AutoTokenizer, AutoModelForCausalLM
 
-        print("⏳ Pobieranie tokenizera...")
+        print("Pobieranie tokenizera...")
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        print("✅ Tokenizer pobrany!")
+        print("Tokenizer pobrany!")
 
-        print("⏳ Pobieranie modelu (to może potrwać bardzo długo)...")
+        print("Pobieranie modelu (to może potrwać bardzo długo)...")
         model = AutoModelForCausalLM.from_pretrained(model_name)
-        print("✅ Model PLLUM pobrany pomyślnie!")
+        print("Model PLLUM pobrany pomyślnie!")
 
         # Show model info
         num_params = sum(p.numel() for p in model.parameters())
@@ -57,18 +57,18 @@ def download_pllum_model(
         return True
 
     except ImportError:
-        print("❌ Błąd: Transformers nie jest zainstalowany.")
+        print("Błąd: Transformers nie jest zainstalowany.")
         print("   Uruchom: pip install transformers torch")
         return False
     except Exception as e:
-        print(f"❌ Błąd: {e}")
+        print(f"Błąd: {e}")
         return False
 
 
 def verify_offline_mode() -> bool:
     """Verify if library can work offline."""
     print(f"\n{'='*60}")
-    print("🔍 Weryfikacja trybu offline")
+    print("Weryfikacja trybu offline")
     print('=' * 60)
 
     try:
@@ -82,7 +82,7 @@ def verify_offline_mode() -> bool:
         test_text = "Mój PESEL to 90010112345, email: jan@test.pl"
         result = anonymizer.anonymize(test_text)
 
-        print(f"✅ Biblioteka działa poprawnie!")
+        print(f"Biblioteka działa poprawnie!")
         print(f"\n   Test:")
         print(f"   Input:  '{test_text}'")
         print(f"   Output: '{result}'")
@@ -90,13 +90,13 @@ def verify_offline_mode() -> bool:
         return True
 
     except ImportError as e:
-        print(f"❌ Błąd importu: {e}")
+        print(f"Błąd importu: {e}")
         print(
             "   Upewnij się, że biblioteka jest zainstalowana: pip install -e ."
         )
         return False
     except Exception as e:
-        print(f"❌ Błąd weryfikacji: {e}")
+        print(f"Błąd weryfikacji: {e}")
         return False
 
 
@@ -118,7 +118,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 60)
-    print("🚀 anonymizer - Pobieranie modelu PLLUM")
+    print("anonymizer - Pobieranie modelu PLLUM")
     print("=" * 60)
     print()
     print(
@@ -126,8 +126,15 @@ def main():
     )
     print("UWAGA: Model ma ~24GB, pobieranie może zająć dużo czasu!")
     print()
+    print("Tryby pracy warstwy syntezy (PLLuM):")
+    print("   1) API (wymaga klucza w API_KEY/PLLUM_API_KEY) - brak pobierania.")
+    print("   2) Offline (bez klucza) - wymaga lokalnego modelu (~24GB).")
     print(
-        "💡 Jeśli masz klucz API, możesz używać modelu hostowanego bez pobierania:"
+        "   3) Fallback lokalny (losowe próbki) – gdy offline nie jest dostępny."
+    )
+    print()
+    print(
+        "Jeśli masz klucz API, możesz używać modelu hostowanego bez pobierania:"
     )
     print("   from anonymizer import PLLUMClient")
     print("   client = PLLUMClient(api_key='TWOJ_KLUCZ')")
@@ -150,9 +157,9 @@ def main():
     print()
     print("=" * 60)
     if success:
-        print("✅ Gotowe! Teraz możesz pracować offline.")
+        print("Gotowe! Teraz możesz pracować offline.")
     else:
-        print("⚠️  Model nie został pobrany poprawnie.")
+        print("Model nie został pobrany poprawnie.")
     print("=" * 60)
 
     sys.exit(0 if success else 1)

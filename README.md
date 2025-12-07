@@ -17,22 +17,6 @@ Zastępuje dane wrażliwe tokenami (np. `[name]`, `[city]`) oraz wspiera generac
 
 ## Instalacja
 
-### Opcja 1: Z PyPI (zalecane)
-
-```bash
-pip install anonymizer
-```
-
-### Opcja 2: Z repozytorium
-
-```bash
-git clone https://github.com/NikodemNowak/hacknation-2025-NASK.git
-cd hacknation-2025-NASK
-pip install -e .
-```
-
-### Opcja 3: Bezpośrednio z GitHub
-
 ```bash
 pip install git+https://github.com/NikodemNowak/hacknation-2025-NASK.git
 ```

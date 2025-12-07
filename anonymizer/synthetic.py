@@ -168,6 +168,7 @@ class SyntheticGenerator:
         self.use_llm = use_llm
         self.use_brackets = use_brackets
         self.offline = offline
+        self._announced_mode = False
         self.prompt_template = prompt or DEFAULT_PROMPT
         self._client_params = {
             "api_key": api_key,
@@ -194,6 +195,14 @@ class SyntheticGenerator:
         )
         kwargs["offline"] = resolved_offline
         self._pllum_client = PLLUMClient(**kwargs)
+        if not self._announced_mode:
+            model_name = kwargs.get("model_name") or PLLUMClient.DEFAULT_MODEL_NAME
+            if resolved_offline:
+                print(f"[synthetic] PLLuM mode: OFFLINE (local model={model_name})")
+            else:
+                base = kwargs.get("base_url") or PLLUMClient.DEFAULT_BASE_URL
+                print(f"[synthetic] PLLuM mode: API (base={base}, model={model_name})")
+            self._announced_mode = True
 
     def _init_data(self):
         """Initialize synthetic datasets (offline fallback)."""
@@ -448,7 +457,7 @@ class SyntheticGenerator:
     def synthesize(self, anonymized_text: str) -> str:
         """
         Replace tokens with synthetic data.
-        Uses PLLuM; falls back to local generation when unavailable.
+        Uses PLLuM; if PLLuM is unavailable, falls back to local samples.
         """
         if not anonymized_text or not self._has_tags(anonymized_text):
             return anonymized_text
@@ -464,8 +473,16 @@ class SyntheticGenerator:
                     response = self._pllum_client.generate(prompt)
                     if response:
                         return response.strip()
-            except Exception:
-                pass
+                    else:
+                        print(
+                            "[synthetic] PLLuM returned empty response; "
+                            "falling back to local samples."
+                        )
+            except Exception as exc:
+                print(
+                    f"[synthetic] PLLuM unavailable ({exc}); "
+                    "falling back to local samples."
+                )
 
         return self._replace_tags_locally(anonymized_text)
 
