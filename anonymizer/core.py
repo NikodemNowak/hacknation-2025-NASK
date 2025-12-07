@@ -170,17 +170,22 @@ class Anonymizer:
         if self._pllum_client is not None:
             return True
         try:
-            if (
+            api_key = (
                 self.pllum_api_key
                 or os.environ.get("PLLLUM_API_KEY")
                 or os.environ.get("PLUM_API_KEY")
-            ):
-                self._pllum_client = PLLUMClient(
-                    api_key=self.pllum_api_key,
-                    base_url=self.pllum_base_url,
-                    model_name=self.pllum_model_name,
-                )
-                return True
+                or os.environ.get("PLLUM_API_KEY")
+                or os.environ.get("API_KEY")
+            )
+            offline_mode = api_key is None
+
+            self._pllum_client = PLLUMClient(
+                api_key=api_key,
+                base_url=self.pllum_base_url,
+                model_name=self.pllum_model_name,
+                offline=offline_mode,
+            )
+            return True
         except Exception:
             return False
         return False
