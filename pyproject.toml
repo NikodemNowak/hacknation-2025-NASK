@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Polish text anonymization library using HerBERT NER + RegEx + PLLuM"
 readme = "README.md"
 authors = [
-    {name = "all_in()", email = ""}
+    {name = "all_in()"}
 ]
 requires-python = ">=3.9"
 classifiers = [
