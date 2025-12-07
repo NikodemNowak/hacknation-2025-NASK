@@ -18,7 +18,7 @@ Usage (Offline mode):
 
 import os
 from pathlib import Path
-from typing import Optional, Dict, Any, List
+from typing import Optional
 
 
 class PLLUMClient:
@@ -58,7 +58,6 @@ class PLLUMClient:
         self.temperature = temperature
         self.max_tokens = max_tokens
 
-        # Configuration
         self.api_key = (
             api_key
             or os.environ.get("PLLUM_API_KEY")
@@ -75,7 +74,6 @@ class PLLUMClient:
             or self.DEFAULT_MODEL_NAME
         )
 
-        # Client initialization
         self._llm = None
         self._local_model = None
         self._local_tokenizer = None
@@ -115,7 +113,7 @@ class PLLUMClient:
 
             self._llm = ChatOpenAI(
                 model=self.model_name,
-                openai_api_key="EMPTY",  # Required by LangChain
+                openai_api_key="EMPTY",
                 openai_api_base=self.base_url,
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
@@ -132,10 +130,10 @@ class PLLUMClient:
             return
 
         try:
-            from transformers import AutoTokenizer, AutoModelForCausalLM
             import torch
+            from transformers import AutoModelForCausalLM, AutoTokenizer
 
-            print(f"⏳ Loading model {self.model_name}...")
+            print(f"\tLoading model {self.model_name}...")
 
             self._local_tokenizer = AutoTokenizer.from_pretrained(
                 self.model_name, local_files_only=True
@@ -148,7 +146,7 @@ class PLLUMClient:
                 device_map="auto",
             )
 
-            print("✅ Model loaded!")
+            print("\tModel loaded!")
 
         except Exception as e:
             raise RuntimeError(
@@ -280,20 +278,20 @@ def download_pllum_model(
         True if successful
     """
     print(f"\n{'='*60}")
-    print(f"📦 Downloading PLLUM model: {model_name}")
-    print("⚠️  WARNING: This model is very large (~24GB)!")
+    print(f"\tDownloading PLLUM model: {model_name}")
+    print("\t\tWARNING: This model is very large (~24GB)!")
     print('=' * 60)
 
     try:
-        from transformers import AutoTokenizer, AutoModelForCausalLM
+        from transformers import AutoModelForCausalLM, AutoTokenizer
 
-        print("⏳ Downloading tokenizer...")
+        print("Downloading tokenizer...")
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        print("✅ Tokenizer downloaded!")
+        print("\tTokenizer downloaded!")
 
-        print("⏳ Downloading model (this may take a very long time)...")
+        print("Downloading model (this may take a very long time)...")
         model = AutoModelForCausalLM.from_pretrained(model_name)
-        print("✅ PLLUM model downloaded successfully!")
+        print("\tPLLUM model downloaded successfully!")
 
         return True
 

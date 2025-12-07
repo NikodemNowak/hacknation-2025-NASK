@@ -347,7 +347,6 @@ class SyntheticGenerator:
                     if response:
                         return response.strip()
             except Exception:
-                # Jeśli PLLuM jest niedostępny, przechodzimy na fallback
                 pass
 
         return self._replace_tags_locally(anonymized_text)

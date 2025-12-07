@@ -20,13 +20,11 @@ Usage:
 """
 
 import re
-from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
+from typing import List, Tuple
 
 from .utils import format_tag
 
-
-# OCR distortion map: letter -> digit
 OCR_REPLACEMENTS = {
     'O': '0',
     'o': '0',
@@ -47,7 +45,7 @@ OCR_REPLACEMENTS = {
     'S': '5',
     's': '5',
     'G': '6',
-    'g': '6',  # może być też 9
+    'g': '6',
     'T': '7',
     't': '7',
     'B': '8',
@@ -56,7 +54,6 @@ OCR_REPLACEMENTS = {
     'q': '9',
 }
 
-# Characters treated as digits in regex
 DIGIT_LIKE = r'0-9oOiIlL!|zZeEaAhHsStTbBgGqQ'
 
 
@@ -66,7 +63,7 @@ class AnonymizationResult:
 
     original_text: str
     anonymized_text: str
-    replacements: List[Tuple[str, str, int]]  # (original, tag, position)
+    replacements: List[Tuple[str, str, int]]
 
 
 def clean_to_digits(text: str) -> str:
@@ -109,7 +106,6 @@ class RegexAnonymizer:
     def _compile_patterns(self):
         """Compile all regex patterns."""
 
-        # PESEL - 11 cyfr, może mieć różne zniekształcenia
         self.pesel_pattern = re.compile(
             rf'\b[{DIGIT_LIKE}]{{11}}\b', re.IGNORECASE
         )
