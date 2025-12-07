@@ -95,6 +95,15 @@ class RegexAnonymizer:
             rf'\b[{DIGIT_LIKE}]{{11}}\b',
             re.IGNORECASE
         )
+
+        # Daty (ogólne): dd.mm.yyyy, dd-mm-yyyy, yyyy-mm-dd, dd/mm/yyyy
+        self.date_pattern = re.compile(
+            r'\b(?:'
+            r'(?:[0-3]?\d[.\-\/][0-1]?\d[.\-\/](?:19|20)?\d{2})'
+            r'|'
+            r'(?:\d{4}[.\-\/][0-1]?\d[.\-\/][0-3]?\d)'
+            r')\b'
+        )
         
         # Email - standardowy format z domeną
         self.email_pattern = re.compile(
@@ -221,9 +230,10 @@ class RegexAnonymizer:
         1. Email (najbardziej charakterystyczny - zawiera @)
         2. Numer konta bankowego (najdłuższy - 26 cyfr)
         3. Karta kredytowa (16 cyfr)
-        4. PESEL (11 cyfr)
-        5. Numer dowodu osobistego (różne formaty)
-        6. Telefon (9 cyfr, ale różne formaty)
+        4. Daty
+        5. PESEL (11 cyfr)
+        6. Numer dowodu osobistego (różne formaty)
+        7. Telefon (9 cyfr, ale różne formaty)
         
         Args:
             text: Tekst do anonimizacji
@@ -241,14 +251,17 @@ class RegexAnonymizer:
         
         # 3. Karta kredytowa
         result = self._replace_credit_cards(result)
+
+        # 4. Daty
+        result = self._replace_dates(result)
         
-        # 4. PESEL
+        # 5. PESEL
         result = self._replace_pesels(result)
         
-        # 5. Numer dowodu
+        # 6. Numer dowodu
         result = self._replace_document_numbers(result)
         
-        # 6. Telefon
+        # 7. Telefon
         result = self._replace_phones(result)
         
         return result
@@ -276,6 +289,12 @@ class RegexAnonymizer:
                 return self._format_tag('credit-card-number')
             return match.group(0)
         return self.credit_card_pattern.sub(replace, text)
+
+    def _replace_dates(self, text: str) -> str:
+        """Zamienia daty na tag {date}."""
+        def replace(match):
+            return self._format_tag('date')
+        return self.date_pattern.sub(replace, text)
     
     def _replace_pesels(self, text: str) -> str:
         """Zamienia numery PESEL na tag."""

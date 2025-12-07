@@ -26,6 +26,8 @@ from typing import Dict, List, Optional
 from .ner_layer import NERAnonymizer
 from .regex_layer import RegexAnonymizer
 from .synthetic import SyntheticGenerator
+from .pllum_client import PLLUMClient
+from .utils import ALL_TAGS
 
 
 @dataclass
@@ -93,6 +95,7 @@ class Anonymizer:
         self._regex_layer: Optional[RegexAnonymizer] = None
         self._ner_layer: Optional[NERAnonymizer] = None
         self._synthetic_generator: Optional[SyntheticGenerator] = None
+        self._pllum_client: Optional[PLLUMClient] = None
 
         # Lazy loading - warstwy są ładowane przy pierwszym użyciu
         if use_regex:
@@ -172,7 +175,27 @@ class Anonymizer:
         # 4. Łączenie zduplikowanych sąsiadujących tagów
         result = self._merge_duplicate_tags(result)
 
+        # 5. Opcjonalne domknięcie LLM (walidacja + uzupełnianie tagów)
+        if apply_synthetic and self._ensure_pllum_client():
+            result = self._llm_refine(text, result)
+
         return result
+
+    def _ensure_pllum_client(self) -> bool:
+        """Leniewe tworzenie klienta PLLuM do walidacji/uzupełniania tagów."""
+        if self._pllum_client is not None:
+            return True
+        try:
+            if self.pllum_api_key or os.environ.get("PLLLUM_API_KEY") or os.environ.get("PLUM_API_KEY"):
+                self._pllum_client = PLLUMClient(
+                    api_key=self.pllum_api_key,
+                    base_url=self.pllum_base_url,
+                    model_name=self.pllum_model_name,
+                )
+                return True
+        except Exception:
+            return False
+        return False
 
     def _merge_duplicate_tags(self, text: str) -> str:
         """
@@ -189,6 +212,37 @@ class Anonymizer:
             # Pattern dla {tag} {tag} -> {tag}
             pattern = r'\{([^}]+)\}(?:\s*\{\1\})+'
             return re.sub(pattern, r'{\1}', text)
+
+    def _llm_refine(self, original_text: str, anonymized_text: str) -> str:
+        """
+        Używa PLLuM do weryfikacji / domknięcia tagowania:
+        - sprawdza czy wszystkie dane wrażliwe są otagowane
+        - zachowuje istniejące tagi, dodaje brakujące
+        """
+        if not self._pllum_client:
+            return anonymized_text
+
+        tags_list = ", ".join(sorted(ALL_TAGS))
+        prompt = (
+            "Jesteś asystentem anonimizacji. "
+            "Masz tekst źródłowy i jego zanonimizowaną wersję z tagami. "
+            "Zachowaj wszystkie istniejące tagi i dodaj brakujące, "
+            "używając wyłącznie tagów: {tags}. "
+            "Nie wstawiaj żadnych danych osobowych ani syntetycznych – tylko tagi. "
+            "Zwróć sam zanonimizowany tekst.\n\n"
+            "TAGI: {tags}\n\n"
+            "ORYGINAŁ:\n{orig}\n\n"
+            "ZANONIMIZOWANE:\n{anon}\n\n"
+            "WYNIK:"
+        ).format(tags=tags_list, orig=original_text, anon=anonymized_text)
+
+        try:
+            response = self._pllum_client.generate(prompt)
+            if response:
+                return response.strip()
+        except Exception:
+            pass
+        return anonymized_text
 
     def anonymize_batch(self, texts: List[str]) -> List[str]:
         """

@@ -80,6 +80,17 @@ class NERAnonymizer:
             "DOCUMENT-NUMBER": "document-number",
             "JOB-TITLE": "job-title",
             "SCHOOL-NAME": "school-name",
+            "SEX": "sex",
+            "RELIGION": "religion",
+            "POLITICAL-VIEW": "political-view",
+            "ETHNICITY": "ethnicity",
+            "SEXUAL-ORIENTATION": "sexual-orientation",
+            "HEALTH": "health",
+            "RELATIVE": "relative",
+            "DATE": "date",
+            "DATE-OF-BIRTH": "date-of-birth",
+            "USERNAME": "username",
+            "SECRET": "secret",
         }
 
     def _format_tag(self, tag: str) -> str:

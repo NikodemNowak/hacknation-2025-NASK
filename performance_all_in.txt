@@ -1,0 +1,7 @@
+Time: 310.16 s
+Hardware:
+  Typ: CPU
+  Model: AMD Ryzen 7 8845HS w/ Radeon 780M Graphics
+API:
+  Czy użyto API PLLUM: NIE
+  Model: HerBERT (local) + Regex

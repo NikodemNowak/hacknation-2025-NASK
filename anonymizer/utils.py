@@ -11,35 +11,44 @@ from typing import Dict, List, Set
 
 # Tagi obsługiwane przez warstwę regex (dane o stałym formacie)
 REGEX_TAGS: Set[str] = {
-    "pesel",              # PESEL (11 cyfr)
-    "email",              # Adresy e-mail
-    "phone",              # Numery telefonów
-    "bank-account",       # Numery kont bankowych (IBAN)
-    "credit-card-number", # Numery kart kredytowych
-    "document-number",    # Numery dowodów osobistych
+    "pesel",               # PESEL (11 cyfr)
+    "email",               # Adresy e-mail
+    "phone",               # Numery telefonów
+    "bank-account",        # Numery kont bankowych (IBAN)
+    "credit-card-number",  # Numery kart kredytowych
+    "document-number",     # Numery dowodów osobistych / paszportów
+    "date",                # Daty (ogólne)
 }
 
-# Tagi obsługiwane przez warstwę NER (wymagają modelu NLP)
+# Tagi obsługiwane przez warstwę NER/LLM (kontekstowe)
 NER_TAGS: Set[str] = {
-    "name",               # Imiona
-    "surname",            # Nazwiska
-    "city",               # Miasta
-    "address",            # Adresy (ulica, numer domu)
-    "company",            # Nazwy firm/organizacji
-    "age",                # Wiek
-    "sex",                # Płeć
-    "date",               # Daty
-    "date-of-birth",      # Data urodzenia
-    "religion",           # Religia
-    "political-view",     # Poglądy polityczne
-    "health",             # Informacje zdrowotne
-    "relative",           # Relacje rodzinne
-    "nationality",        # Narodowość
-    "sexual-orientation", # Orientacja seksualna
-    "country",            # Kraj
-    "voivodeship",        # Województwo
-    "district",           # Powiat
-    "zip-code",           # Kod pocztowy
+    # Dane identyfikacyjne osobowe
+    "name",
+    "surname",
+    "age",
+    "date-of-birth",
+    "sex",
+    "religion",
+    "political-view",
+    "ethnicity",
+    "sexual-orientation",
+    "health",
+    "relative",
+    # Lokalizacja / kontakt
+    "city",
+    "address",
+    # Dokumenty / identyfikatory
+    "company",
+    "school-name",
+    "job-title",
+    # Inne
+    "nationality",
+    "country",
+    "voivodeship",
+    "district",
+    "zip-code",
+    "username",
+    "secret",
 }
 
 # Wszystkie obsługiwane tagi
