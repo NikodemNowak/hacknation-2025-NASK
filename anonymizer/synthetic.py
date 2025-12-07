@@ -18,29 +18,90 @@ from typing import Dict, List, Optional
 
 from .pllum_client import PLLUMClient
 
-DEFAULT_PROMPT = (
-    "Jesteś asystentem danych po polsku. Zamień tokeny (np. {name}, {surname}, "
-    "{age}, {city}, {address}, {company}, {phone}, {email}, {pesel}, {date}) "
-    "na realistyczne, lecz fikcyjne dane w poprawnych formach gramatycznych.\n"
-    "Zasady:\n"
-    "1) Najpierw ustal płeć z kontekstu (zaimki: 'ona/on'; role żeńskie: nauczycielka, mama; słowa: 'Pan', 'Pani').\n"
-    "2) Wybierz imię i nazwisko pasujące do płci. Jeśli {name} i {surname} dotyczą tej samej osoby, użyj jednej spójnej pary dla wszystkich wystąpień.\n"
-    "3) Odmieniaj przez przypadki i rodzaj:\n"
-    "   - 'Mama {surname}' -> dopełniacz: 'Mama Kowalskiego' (nie 'Kowalski').\n"
-    "   - Przy przyimkach ('z {name}', 'o {name}', 'do {name}') użyj właściwego przypadka dla imienia i nazwiska zgodnego z płcią.\n"
-    "   - Jeśli brak kontekstu, traktuj {name}/{surname} w mianowniku.\n"
-    "4) {age} podawaj jako liczbę, np. 'ma 35 lat'.\n"
-    "5) Nie zmieniaj sensu zdań, nie dodawaj komentarzy ani cudzysłowów.\n"
-    "6) Ten sam token w tekście ma być spójny w kolejnych wystąpieniach (ta sama wartość, odmieniona gdy potrzeba).\n"
-    "\nPrzykłady:\n"
-    "Tekst: Mama {surname} ma na imię {name}. O niej mówią, że jest pracowita.\n"
-    "Wynik: Mama Kowalskiego ma na imię Anna. O niej mówią, że jest pracowita.\n"
-    "Tekst: Mama {surname} ma na imię {name}. Jest ona {age} lat. Jest nauczycielką.\n"
-    "Wynik: Mama Nowaka ma na imię Maria. Jest ona 38 lat. Jest nauczycielką.\n"
-    "Tekst: Spotkałem się z {name} w {city} w dniu {date}.\n"
-    "Wynik: Spotkałem się z Piotrem w Krakowie w dniu 14.03.2021.\n"
-    "\nTekst:\n{input_text}\n\nWynik:"
-)
+DEFAULT_PROMPT = """Jesteś ekspertem od generowania realistycznych, fikcyjnych danych osobowych po polsku.
+
+ZADANIE: Zamień wszystkie tokeny w nawiasach klamrowych na realistyczne, fikcyjne dane. Zachowaj resztę tekstu bez zmian.
+
+DOSTĘPNE TOKENY I ICH ZNACZENIE:
+- {name} → imię (np. Anna, Piotr, Katarzyna, Jan)
+- {surname} → nazwisko (np. Kowalski, Nowak, Wiśniewska)
+- {age} → wiek w latach (liczba 18-80 dla dorosłych)
+- {date-of-birth} → data urodzenia (np. 15.03.1985)
+- {date} → dowolna data (np. 23.09.2023)
+- {sex} → płeć (mężczyzna/kobieta)
+- {city} → miasto (np. Warszawa, Kraków, Poznań)
+- {address} → pełny adres (np. ul. Kwiatowa 15/3, 00-001 Warszawa)
+- {email} → adres email (np. jan.kowalski@gmail.com)
+- {phone} → numer telefonu (np. +48 512 345 678)
+- {pesel} → numer PESEL (11 cyfr)
+- {document-number} → numer dokumentu (np. ABC123456)
+- {company} → nazwa firmy (np. TechPol Sp. z o.o.)
+- {school-name} → nazwa szkoły (np. II LO im. Stefana Batorego)
+- {job-title} → stanowisko (np. kierownik działu, nauczyciel)
+- {bank-account} → numer konta (26 cyfr)
+- {credit-card-number} → numer karty (16 cyfr)
+- {username} → login/nazwa użytkownika (np. jan_kowalski92)
+- {secret} → hasło/klucz (np. ********)
+- {religion} → wyznanie (np. katolik, ateista)
+- {political-view} → poglądy polityczne
+- {ethnicity} → pochodzenie etniczne
+- {sexual-orientation} → orientacja seksualna
+- {health} → dane zdrowotne
+- {relative} → relacja rodzinna z imieniem (np. brat Jan, córka Anna)
+
+ZASADY KRYTYCZNE:
+
+1. SPÓJNOŚĆ PŁCI:
+   - Ustal płeć z kontekstu: zaimki (on/ona/jego/jej), końcówki czasowników (-ł/-ła), role (mama/tata, nauczycielka/nauczyciel), słowa (Pan/Pani, mężczyzna/kobieta).
+   - Jeśli kontekst wskazuje kobietę → użyj żeńskiego imienia (Anna, Maria, Katarzyna) i żeńskiej formy nazwiska (Kowalska, Nowak).
+   - Jeśli kontekst wskazuje mężczyznę → użyj męskiego imienia (Jan, Piotr, Adam) i męskiej formy nazwiska (Kowalski, Nowak).
+   - {sex} musi być zgodne z imieniem i kontekstem.
+
+2. SPÓJNOŚĆ DANYCH W TEKŚCIE:
+   - Jeśli ten sam token {name} lub {surname} występuje wielokrotnie → użyj TEJ SAMEJ wartości (tylko odmienionej przez przypadki).
+   - Jeśli {age} i {date-of-birth} są w tekście → muszą być logicznie zgodne (wiek 45 lat → urodzony ~1979).
+   - Jeśli {name} i {surname} dotyczą tej samej osoby → zachowaj spójną parę imię-nazwisko.
+
+3. ODMIANA PRZEZ PRZYPADKI:
+   - "Mama {surname}" → dopełniacz: "Mama Kowalskiego" lub "Mama Kowalskiej" (dla kobiety).
+   - "z {name}" → narzędnik: "z Anną", "z Piotrem".
+   - "o {name}" → miejscownik: "o Annie", "o Piotrze".
+   - "do {name}" → dopełniacz: "do Anny", "do Piotra".
+   - "{name} {surname}" bez kontekstu → mianownik: "Anna Kowalska", "Jan Kowalski".
+
+4. REALISTYCZNE WARTOŚCI:
+   - {age} dla dorosłego: 18-80 lat.
+   - {age} w kontekście "cm wzrostu" → to błąd tagowania, ale daj realistyczny wzrost: 150-195 cm.
+   - {date} → format DD.MM.RRRR, realistyczne daty (nie z przyszłości dla wydarzeń przeszłych).
+   - {phone} → format +48 XXX XXX XXX.
+   - {email} → realistyczny email pasujący do imienia/nazwiska jeśli są w tekście.
+
+5. ZACHOWAJ RESZTĘ TEKSTU:
+   - NIE zmieniaj słów, które nie są tokenami.
+   - NIE dodawaj komentarzy, wyjaśnień ani cudzysłowów.
+   - Zwróć TYLKO tekst z podstawionymi danymi.
+
+PRZYKŁADY:
+
+Tekst: {surname} ma {age} lat, urodził się w {date-of-birth}. Jest mężczyzną. Ma {age} cm wzrostu.
+Wynik: Kowalski ma 45 lat, urodził się w 12.05.1979. Jest mężczyzną. Ma 182 cm wzrostu.
+
+Tekst: Mama {surname} ma na imię {name}. Jest ona nauczycielką.
+Wynik: Mama Kowalskiej ma na imię Anna. Jest ona nauczycielką.
+
+Tekst: Pan {name} {surname} pracuje w {company} jako {job-title}. Mieszka w {city}.
+Wynik: Pan Jan Nowak pracuje w TechPol Sp. z o.o. jako kierownik projektu. Mieszka w Warszawie.
+
+Tekst: Spotkałem się z {name} w {city}. Rozmawialiśmy o {name} przez godzinę.
+Wynik: Spotkałem się z Piotrem w Krakowie. Rozmawialiśmy o Piotrze przez godzinę.
+
+Tekst: {name} {surname} ({sex}, {age} lat) zgłosił się do lekarza z powodu {health}.
+Wynik: Anna Wiśniewska (kobieta, 34 lata) zgłosiła się do lekarza z powodu bólu głowy.
+
+Tekst:
+{input_text}
+
+Wynik:"""
 
 
 @dataclass
