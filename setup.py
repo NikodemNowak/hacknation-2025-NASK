@@ -18,7 +18,7 @@ setup(
     python_requires=">=3.9",
     author="all_in()",
     author_email="",
-    description="Narzędzie do anonimizacji danych dla modelu PLLUM - Dane bez twarzy",
+    description="Data anonymization tool for PLLUM model - Dane bez twarzy",
     long_description=(
         open("README.md", encoding="utf-8").read()
         if __import__("os").path.exists("README.md")

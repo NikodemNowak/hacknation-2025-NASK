@@ -1,15 +1,13 @@
-"""
-Stałe i funkcje pomocnicze dla biblioteki anonymizer.
-"""
+"""Constants and helper functions for anonymizer."""
 
 from typing import Dict, List, Set
 
 
 # =============================================================================
-# TAGI ANONIMIZACJI - zgodne z wymogami konkursu "Dane bez twarzy"
+# Anonymization tags (aligned with competition requirements)
 # =============================================================================
 
-# Tagi obsługiwane przez warstwę regex (dane o stałym formacie)
+# Tags handled by regex layer (fixed-format data)
 REGEX_TAGS: Set[str] = {
     "pesel",  # PESEL (11 cyfr)
     "email",  # Adresy e-mail
@@ -20,7 +18,7 @@ REGEX_TAGS: Set[str] = {
     "date",  # Daty (ogólne)
 }
 
-# Tagi obsługiwane przez warstwę NER/LLM (kontekstowe)
+# Tags handled by NER/LLM (contextual)
 NER_TAGS: Set[str] = {
     # Dane identyfikacyjne osobowe
     "name",
@@ -51,26 +49,18 @@ NER_TAGS: Set[str] = {
     "secret",
 }
 
-# Wszystkie obsługiwane tagi
+# All supported tags
 ALL_TAGS: Set[str] = REGEX_TAGS | NER_TAGS
 
 
 # =============================================================================
-# FUNKCJE POMOCNICZE
+# Helper functions
 # =============================================================================
 
 
 def format_tag(tag: str, use_brackets: bool = False) -> str:
     """
-    Formatuje tag anonimizacji.
-
-    Args:
-        tag: Nazwa tagu (np. "name", "pesel")
-        use_brackets: Jeśli True, używa nawiasów kwadratowych [tag],
-                     jeśli False, używa klamrowych {tag}
-
-    Returns:
-        Sformatowany tag
+    Format a tag with chosen bracket style.
     """
     if use_brackets:
         return f"[{tag}]"
@@ -78,16 +68,15 @@ def format_tag(tag: str, use_brackets: bool = False) -> str:
 
 
 def is_valid_tag(tag: str) -> bool:
-    """Sprawdza czy tag jest prawidłowy."""
+    """Check if tag is supported."""
     return tag in ALL_TAGS
 
 
 def normalize_text(text: str) -> str:
     """
-    Normalizuje tekst do przetwarzania.
-
-    - Usuwa nadmiarowe białe znaki
-    - Normalizuje znaki specjalne
+    Normalize text:
+    - collapse multiple spaces
+    - trim whitespace
     """
     # Zamień wiele spacji na jedną
     import re
@@ -97,7 +86,7 @@ def normalize_text(text: str) -> str:
 
 
 def get_tag_description(tag: str) -> str:
-    """Zwraca opis tagu po polsku."""
+    """Return human-friendly tag description."""
     descriptions = {
         "pesel": "PESEL",
         "email": "Adres e-mail",

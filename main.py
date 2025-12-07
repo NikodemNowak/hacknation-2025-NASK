@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Demonstracja biblioteki do anonimizacji tekstu za pomocą regex.
+Demo of text anonymization library using regex.
 
-Pobiera losowe 100 linii z plików treningowych NASK i porównuje:
-- original.txt - oryginalne teksty z danymi osobowymi
-- anon.txt - teksty po anonimizacji (referencja)
+Loads random 100 lines from NASK training files and compares:
+- original.txt - original texts with personal data
+- anon.txt - anonymized texts (reference)
 
-Pokazuje jak działa nasz anonymizer i porównuje z oczekiwanym wynikiem.
+Shows how our anonymizer works and compares with expected results.
 """
 
 import random
@@ -17,10 +17,10 @@ from anonymizer.regex_layer import RegexAnonymizer, anonymize_text
 
 def load_data(directory: str = "nask_train") -> Tuple[List[str], List[str]]:
     """
-    Wczytuje dane treningowe.
+    Load training data.
 
     Returns:
-        Tuple (original_lines, anon_lines) - listy linii z obu plików
+        Tuple (original_lines, anon_lines) - line lists from both files
     """
     script_dir = os.path.dirname(os.path.abspath(__file__))
     data_dir = os.path.join(script_dir, directory)
@@ -43,20 +43,20 @@ def get_sample_pairs(
     original: List[str], anon: List[str], n: int = 100, seed: int = 42
 ) -> List[Tuple[int, str, str]]:
     """
-    Pobiera n losowych par (indeks, original, anon).
+    Get n random pairs (index, original, anon).
 
     Args:
-        original: Lista oryginalnych linii
-        anon: Lista zanonimizowanych linii
-        n: Liczba par do pobrania
-        seed: Seed dla generatora losowego (dla powtarzalności)
+        original: List of original lines
+        anon: List of anonymized lines
+        n: Number of pairs to get
+        seed: Random seed (for reproducibility)
 
     Returns:
-        Lista krotek (indeks, oryginalna linia, zanonimizowana linia)
+        List of tuples (index, original line, anonymized line)
     """
     random.seed(seed)
 
-    # Upewnij się, że obie listy mają tę samą długość
+    # Ensure both lists have same length
     min_len = min(len(original), len(anon))
     indices = random.sample(range(min_len), min(n, min_len))
 
@@ -67,12 +67,12 @@ def highlight_differences(
     original: str, anonymized: str, reference: str
 ) -> dict:
     """
-    Porównuje wynik anonimizacji z referencją.
+    Compare anonymization result with reference.
 
     Returns:
-        dict z informacjami o różnicach
+        dict with difference information
     """
-    # Sprawdź czy nasze tagi zostały zastąpione
+    # Check if our tags were replaced
     our_tags = [
         '[pesel]',
         '[email]',
@@ -104,7 +104,7 @@ def highlight_differences(
     our_found = sum(1 for tag in our_tags if tag in anonymized)
     ref_found = sum(1 for tag in ref_tags if tag in reference)
 
-    # Zlicz ile podstawowych tagów (które obsługujemy) jest w referencji
+    # Count how many basic tags (that we support) are in reference
     regex_tags_in_ref = sum(1 for tag in our_tags if tag in reference)
 
     return {
@@ -123,7 +123,7 @@ def demo_single_line(
     anonymizer: RegexAnonymizer, line: str, show_details: bool = True
 ):
     """
-    Demonstracja anonimizacji pojedynczej linii.
+    Demo anonymization of a single line.
     """
     result = anonymizer.anonymize_detailed(line)
 
@@ -151,14 +151,14 @@ def demo_single_line(
 
 
 def main():
-    """Główna funkcja demonstracyjna."""
+    """Main demo function."""
 
     print("=" * 80)
     print("  DEMONSTRACJA BIBLIOTEKI REGEX ANONYMIZER")
     print("=" * 80)
     print()
 
-    # Wczytaj dane
+    # Load data
     print("📂 Wczytywanie danych treningowych...")
     try:
         original_lines, anon_lines = load_data()
@@ -170,10 +170,10 @@ def main():
 
     print()
 
-    # Inicjalizuj anonymizer
+    # Initialize anonymizer
     anonymizer = RegexAnonymizer(use_brackets=True)
 
-    # Pobierz 100 losowych par
+    # Get 100 random pairs
     print("🎲 Pobieram 100 losowych linii do analizy...")
     pairs = get_sample_pairs(original_lines, anon_lines, n=100)
     print(f"   Pobrano {len(pairs)} par")
@@ -204,7 +204,7 @@ def main():
         print(reference[:300] + ("..." if len(reference) > 300 else ""))
         print()
 
-        # Porównanie
+        # Comparison
         stats = highlight_differences(original, our_result, reference)
         print(
             f"📈 Statystyki: Nasze tagi: {stats['our_tags_used']}, "
@@ -212,7 +212,7 @@ def main():
             f"Match ratio: {stats['match_ratio']:.2%}"
         )
 
-    # Analiza wszystkich 100 linii
+    # Analysis of all 100 lines
     print()
     print("=" * 80)
     print("📊 PODSUMOWANIE ANALIZY 100 LINII")
@@ -249,7 +249,7 @@ def main():
         f"   • Linie z co najmniej 1 znalezionym tagiem regex: {sum(1 for r in results if r['our_tags_used'] > 0)}/100"
     )
 
-    # Znajdź przykłady gdzie znaleźliśmy dużo
+    # Find examples where we found many tags
     good_examples = [r for r in results if r['our_tags_used'] >= 3]
     if good_examples:
         print()
@@ -263,7 +263,7 @@ def main():
         print("Nasza anonimizacja (fragment):")
         print(good_examples[0]['our_result'][:400])
 
-    # Pokaż jakie tagi obsługujemy
+    # Show which tags we support
     print()
     print("=" * 80)
     print("ℹ️  OBSŁUGIWANE TYPY DANYCH:")

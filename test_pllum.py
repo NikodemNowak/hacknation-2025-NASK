@@ -44,9 +44,9 @@ def main():
         src = original[idx]
         ref = anon_ref[idx]
 
-        # 1) RegEx + NER (bez PLLuM)
+        # 1) RegEx + NER (without PLLuM)
         anonymized = anonymizer.anonymize(src, with_synthetic=False)
-        # 2) RegEx + NER + PLLuM walidacja/uzupełnienie + synteza
+        # 2) RegEx + NER + PLLuM validation/completion + synthesis
         anonymized_llm = anonymizer.anonymize(src, with_synthetic=True)
 
         print("=" * 100)

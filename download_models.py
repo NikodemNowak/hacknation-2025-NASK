@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-Skrypt do pobrania modelu PLLUM przed uruchomieniem w trybie offline.
+Script to download PLLUM model before running in offline mode.
 
-Pobiera:
-- Model PLLUM: CYFRAGOVPL/pllum-12b-nc-chat-250715 (~24GB!)
+Downloads:
+- PLLUM model: CYFRAGOVPL/pllum-12b-nc-chat-250715 (~24GB!)
 
-Użycie:
-    python download_models.py           # Pobiera model PLLUM
-    python download_models.py --verify  # Tylko weryfikacja
+Usage:
+    python download_models.py           # Downloads PLLUM model
+    python download_models.py --verify  # Verification only
 
-UWAGA: Pobieranie modelu PLLUM (~24GB) może zająć dużo czasu!
-Dla trybu API (hostowany model) nie musisz pobierać modelu lokalnie.
+WARNING: Downloading PLLUM model (~24GB) may take a long time!
+For API mode (hosted model) you don't need to download locally.
 
-Po uruchomieniu tego skryptu biblioteka może działać w trybie offline.
+After running this script, the library can work in offline mode.
 """
 
 import argparse
@@ -24,15 +24,15 @@ def download_pllum_model(
     model_name: str = "CYFRAGOVPL/pllum-12b-nc-chat-250715",
 ) -> bool:
     """
-    Pobiera model PLLUM do użytku offline.
+    Download PLLUM model for offline use.
 
-    UWAGA: Model jest duży (~24GB), pobieranie może zająć dużo czasu!
+    WARNING: Model is large (~24GB), download may take a long time!
 
     Args:
-        model_name: Nazwa modelu na Hugging Face
+        model_name: Model name on Hugging Face
 
     Returns:
-        True jeśli sukces
+        True if successful
     """
     print(f"\n{'='*60}")
     print(f"📦 Pobieranie modelu PLLUM: {model_name}")
@@ -50,7 +50,7 @@ def download_pllum_model(
         model = AutoModelForCausalLM.from_pretrained(model_name)
         print("✅ Model PLLUM pobrany pomyślnie!")
 
-        # Pokaż informacje o modelu
+        # Show model info
         num_params = sum(p.numel() for p in model.parameters())
         print(f"   Parametry: {num_params:,}")
 
@@ -66,19 +66,19 @@ def download_pllum_model(
 
 
 def verify_offline_mode() -> bool:
-    """Weryfikuje czy biblioteka może działać offline."""
+    """Verify if library can work offline."""
     print(f"\n{'='*60}")
     print("🔍 Weryfikacja trybu offline")
     print('=' * 60)
 
     try:
-        # Importuj bibliotekę
+        # Import library
         from anonymizer import Anonymizer
 
-        # Stwórz anonymizer
+        # Create anonymizer
         anonymizer = Anonymizer(offline=True)
 
-        # Przetestuj na przykładzie
+        # Test on example
         test_text = "Mój PESEL to 90010112345, email: jan@test.pl"
         result = anonymizer.anonymize(test_text)
 
@@ -102,17 +102,17 @@ def verify_offline_mode() -> bool:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Pobiera model PLLUM dla biblioteki anonymizer"
+        description="Download PLLUM model for anonymizer library"
     )
     parser.add_argument(
         "--verify",
         action="store_true",
-        help="Tylko zweryfikuj tryb offline (bez pobierania)",
+        help="Only verify offline mode (no download)",
     )
     parser.add_argument(
         "--model",
         default="CYFRAGOVPL/pllum-12b-nc-chat-250715",
-        help="Nazwa modelu PLLUM (domyślnie: CYFRAGOVPL/pllum-12b-nc-chat-250715)",
+        help="PLLUM model name (default: CYFRAGOVPL/pllum-12b-nc-chat-250715)",
     )
 
     args = parser.parse_args()
@@ -134,16 +134,16 @@ def main():
 
     success = True
 
-    # Jeśli --verify, to tylko weryfikacja
+    # If --verify, only verification
     if args.verify:
         success = verify_offline_mode()
         sys.exit(0 if success else 1)
 
-    # Pobierz model PLLUM
+    # Download PLLUM model
     if not download_pllum_model(args.model):
         success = False
 
-    # Weryfikacja
+    # Verification
     if success:
         verify_offline_mode()
 

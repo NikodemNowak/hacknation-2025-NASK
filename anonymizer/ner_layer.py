@@ -1,8 +1,8 @@
 """
-Warstwa NER (Named Entity Recognition) do anonimizacji danych kontekstowych.
+NER layer for contextual anonymization.
 
-Używa modelu HerBERT (token-classification) z transformers i mapuje
-etykiety encji na tagi anonimizacji (np. PER -> {name}, LOC -> {city}).
+Uses a HerBERT token-classification model and maps entity labels to
+anonymization tags (e.g., PER -> {name}, LOC -> {city}).
 """
 
 from dataclasses import dataclass
@@ -18,21 +18,21 @@ from transformers import (
 
 @dataclass
 class NEREntity:
-    """Reprezentuje wykrytą encję."""
+    """Represents a detected entity."""
 
     text: str
-    label: str  # Typ encji (PER, LOC, ORG, etc.)
+    label: str  # Entity type (PER, LOC, ORG, etc.)
     start: int
     end: int
-    tag: str  # Nasz tag anonimizacji ({name}, {city}, etc.)
+    tag: str  # Tag such as {name}, {city}, etc.
 
 
 class NERAnonymizer:
     """
-    Klasa do anonimizacji danych kontekstowych za pomocą modeli NLP (HerBERT).
+    Contextual anonymization with NLP (HerBERT).
 
-    Domyślnie używa modelu `allegro/herbert-base-cased`, ale można
-    przekazać własną ścieżkę do dotrenowanego modelu.
+    Defaults to `allegro/herbert-base-cased`, but a fine-tuned model path
+    can be provided.
     """
 
     def __init__(
@@ -43,14 +43,13 @@ class NERAnonymizer:
         device: Optional[int] = None,
     ):
         """
-        Inicjalizacja anonimizera NER.
+        Initialize NER anonymizer.
 
         Args:
-            model_path: Ścieżka/nazwa modelu HerBERT (token-classification).
-                        Jeśli None, użyje `allegro/herbert-base-cased`.
-            use_brackets: Jeśli True, używa [tag], jeśli False, {tag}
-            local_files_only: Jeśli True, ładuje wyłącznie lokalne pliki HF
-            device: Wymuszony index GPU lub -1 (CPU). Domyślnie autodetekcja.
+            model_path: HF path/name to HerBERT token-class model
+            use_brackets: Use [tag] if True, else {tag}
+            local_files_only: Load HF files only locally
+            device: GPU index or -1 (CPU); auto-detect if None
         """
         self.model_path = model_path or "allegro/herbert-base-cased"
         self.use_brackets = use_brackets
@@ -65,8 +64,8 @@ class NERAnonymizer:
         self._tokenizer = None
         self._model = None
 
-        # Mapowanie etykiet NER na nasze tagi
-        # Stare etykiety (standardowe NER)
+        # Map NER labels to our tags
+        # Legacy labels
         self._label_to_tag = {
             "PER": "name",
             "PERSON": "name",
@@ -100,13 +99,13 @@ class NERAnonymizer:
         }
 
     def _format_tag(self, tag: str) -> str:
-        """Formatuje tag zgodnie z preferencją nawiasów."""
+        """Format tag according to bracket style."""
         if self.use_brackets:
             return f"[{tag}]"
         return f"{{{tag}}}"
 
     def _init_pipeline(self):
-        """Leniwe ładowanie modelu/pipe'a HerBERT."""
+        """Lazy-load HerBERT pipeline."""
         if self._pipeline is not None:
             return
 
@@ -133,7 +132,7 @@ class NERAnonymizer:
             ) from exc
 
     def _map_entity_group(self, entity_group: str) -> Optional[str]:
-        """Mapuje etykietę modelu na tag anonimizacji."""
+        """Map model label to anonymization tag."""
         if not entity_group:
             return None
         normalized = entity_group.upper()
@@ -145,12 +144,8 @@ class NERAnonymizer:
         normalized = normalized.split("-")[-1]
         return self._label_to_tag.get(normalized)
 
-    def extract_entities(
-        self, text: str, debug: bool = False
-    ) -> List[NEREntity]:
-        """
-        Wyodrębnia encje z tekstu i mapuje je na tagi anonimizacji.
-        """
+    def extract_entities(self, text: str, debug: bool = False) -> List[NEREntity]:
+        """Extract entities from text and map to anonymization tags."""
         if not text:
             return []
 
@@ -188,9 +183,7 @@ class NERAnonymizer:
         return entities
 
     def anonymize(self, text: str) -> str:
-        """
-        Anonimizuje tekst zastępując encje NER odpowiednimi tagami.
-        """
+        """Replace detected NER entities with anonymization tags."""
         entities = sorted(self.extract_entities(text), key=lambda e: e.start)
         if not entities:
             return text
@@ -212,7 +205,7 @@ _default_anonymizer: Optional[NERAnonymizer] = None
 
 
 def get_ner_anonymizer() -> NERAnonymizer:
-    """Zwraca domyślny anonymizer NER (singleton)."""
+    """Return default NER anonymizer singleton."""
     global _default_anonymizer
     if _default_anonymizer is None:
         _default_anonymizer = NERAnonymizer()

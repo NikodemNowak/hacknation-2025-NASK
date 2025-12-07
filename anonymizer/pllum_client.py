@@ -1,19 +1,19 @@
 """
-Moduł do integracji z modelem PLLUM.
+PLLUM model integration module.
 
-Obsługuje dwa tryby:
-1. API mode - używa hostowanego modelu przez API organizatora
-2. Offline mode - używa lokalnie pobranego modelu
+Supports two modes:
+1. API mode - uses hosted model via organizer's API
+2. Offline mode - uses locally downloaded model
 
-Użycie (API mode):
+Usage (API mode):
     from anonymizer.pllum_client import PLLUMClient
 
-    client = PLLUMClient(api_key="TWOJ_KLUCZ")
-    response = client.generate("Przerób tekst...")
+    client = PLLUMClient(api_key="YOUR_KEY")
+    response = client.generate("Transform text...")
 
-Użycie (Offline mode):
+Usage (Offline mode):
     client = PLLUMClient(offline=True)
-    response = client.generate("Przerób tekst...")
+    response = client.generate("Transform text...")
 """
 
 import os
@@ -23,12 +23,12 @@ from typing import Optional, Dict, Any, List
 
 class PLLUMClient:
     """
-    Klient do modelu PLLUM.
+    Client for PLLUM model.
 
-    Obsługuje zarówno API organizatora jak i tryb offline z lokalnym modelem.
+    Supports both organizer's API and offline mode with local model.
     """
 
-    # Konfiguracja API organizatora
+    # Organizer API configuration
     DEFAULT_BASE_URL = "https://apim-pllum-tst-pcn.azure-api.net/vllm/v1"
     DEFAULT_MODEL_NAME = "CYFRAGOVPL/pllum-12b-nc-chat-250715"
 
@@ -42,23 +42,23 @@ class PLLUMClient:
         max_tokens: int = 300,
     ):
         """
-        Inicjalizacja klienta PLLUM.
+        Initialize PLLUM client.
 
         Args:
-            api_key: Klucz API (Ocp-Apim-Subscription-Key).
-                     Może być ustawiony w .env (PLLUM_API_KEY / API_KEY).
-            base_url: URL bazowy API (domyślnie: API organizatora)
-            model_name: Nazwa modelu (domyślnie: pllum-12b-nc-chat)
-            offline: Czy używać trybu offline (lokalny model)
-            temperature: Temperatura generacji (0.0-1.0)
-            max_tokens: Maksymalna liczba tokenów odpowiedzi
+            api_key: API key (Ocp-Apim-Subscription-Key).
+                     Can be set in .env (PLLUM_API_KEY / API_KEY).
+            base_url: API base URL (default: organizer's API)
+            model_name: Model name (default: pllum-12b-nc-chat)
+            offline: Use offline mode (local model)
+            temperature: Generation temperature (0.0-1.0)
+            max_tokens: Maximum response tokens
         """
         self._load_env()
         self.offline = offline
         self.temperature = temperature
         self.max_tokens = max_tokens
 
-        # Konfiguracja
+        # Configuration
         self.api_key = (
             api_key
             or os.environ.get("PLLUM_API_KEY")
@@ -75,7 +75,7 @@ class PLLUMClient:
             or self.DEFAULT_MODEL_NAME
         )
 
-        # Inicjalizacja klienta
+        # Client initialization
         self._llm = None
         self._local_model = None
         self._local_tokenizer = None
@@ -86,7 +86,7 @@ class PLLUMClient:
     @staticmethod
     def _load_env(env_path: str = ".env") -> None:
         """
-        Wczytuje zmienne z pliku .env, jeśli istnieje (bez dodatkowych zależności).
+        Load variables from .env file if it exists (no extra dependencies).
         """
         path = Path(env_path)
         if not path.exists():
@@ -100,14 +100,14 @@ class PLLUMClient:
             os.environ.setdefault(key.strip(), value.strip())
 
     def _init_api_client(self):
-        """Inicjalizuje klienta API (LangChain + OpenAI)."""
+        """Initialize API client (LangChain + OpenAI)."""
         if self._llm is not None:
             return
 
         if not self.api_key:
             raise ValueError(
-                "Brak klucza API! Ustaw api_key lub zmienne PLLUM_API_KEY / API_KEY. "
-                "Alternatywnie użyj offline=True dla trybu lokalnego."
+                "Missing API key! Set api_key or env vars PLLUM_API_KEY / API_KEY. "
+                "Alternatively use offline=True for local mode."
             )
 
         try:
@@ -115,7 +115,7 @@ class PLLUMClient:
 
             self._llm = ChatOpenAI(
                 model=self.model_name,
-                openai_api_key="EMPTY",  # Wymagane przez LangChain
+                openai_api_key="EMPTY",  # Required by LangChain
                 openai_api_base=self.base_url,
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
@@ -123,11 +123,11 @@ class PLLUMClient:
             )
         except ImportError:
             raise ImportError(
-                "Brak langchain_openai! Zainstaluj: pip install langchain-openai"
+                "Missing langchain_openai! Install: pip install langchain-openai"
             )
 
     def _init_local_model(self):
-        """Inicjalizuje lokalny model (tryb offline)."""
+        """Initialize local model (offline mode)."""
         if self._local_model is not None:
             return
 
@@ -135,7 +135,7 @@ class PLLUMClient:
             from transformers import AutoTokenizer, AutoModelForCausalLM
             import torch
 
-            print(f"⏳ Ładowanie modelu {self.model_name}...")
+            print(f"⏳ Loading model {self.model_name}...")
 
             self._local_tokenizer = AutoTokenizer.from_pretrained(
                 self.model_name, local_files_only=True
@@ -148,23 +148,23 @@ class PLLUMClient:
                 device_map="auto",
             )
 
-            print("✅ Model załadowany!")
+            print("✅ Model loaded!")
 
         except Exception as e:
             raise RuntimeError(
-                f"Nie można załadować modelu lokalnie: {e}. "
-                f"Uruchom: python download_models.py --pllum"
+                f"Cannot load model locally: {e}. "
+                f"Run: python download_models.py --pllum"
             )
 
     def generate(self, prompt: str) -> str:
         """
-        Generuje odpowiedź na prompt.
+        Generate response to prompt.
 
         Args:
-            prompt: Tekst promptu
+            prompt: Prompt text
 
         Returns:
-            Wygenerowana odpowiedź
+            Generated response
         """
         if self.offline:
             return self._generate_local(prompt)
@@ -172,20 +172,20 @@ class PLLUMClient:
             return self._generate_api(prompt)
 
     def _generate_api(self, prompt: str) -> str:
-        """Generuje przez API."""
+        """Generate via API."""
         self._init_api_client()
 
         response = self._llm.invoke(prompt)
 
-        # LangChain zwraca obiekt AIMessage
+        # LangChain returns AIMessage object
         if hasattr(response, 'content'):
             return response.content
         else:
-            # Fallback dla starszych wersji
+            # Fallback for older versions
             return str(response)
 
     def _generate_local(self, prompt: str) -> str:
-        """Generuje lokalnie."""
+        """Generate locally."""
         self._init_local_model()
 
         import torch
@@ -211,56 +211,55 @@ class PLLUMClient:
 
     def anonymize_with_llm(self, text: str) -> str:
         """
-        Anonimizuje tekst używając modelu LLM.
+        Anonymize text using LLM model.
 
-        UWAGA: To jest wolniejsze niż RegEx/NER, ale może być
-        dokładniejsze dla trudnych przypadków.
+        NOTE: Slower than RegEx/NER but may be more accurate for edge cases.
 
         Args:
-            text: Tekst do anonimizacji
+            text: Text to anonymize
 
         Returns:
-            Zanonimizowany tekst
+            Anonymized text
         """
-        prompt = f"""Jesteś ekspertem od anonimizacji danych osobowych.
-Zamień wszystkie dane osobowe w poniższym tekście na odpowiednie tokeny.
+        prompt = f"""You are an expert in personal data anonymization.
+Replace all personal data in the text below with appropriate tokens.
 
-Użyj następujących tokenów:
-- {{name}} dla imion
-- {{surname}} dla nazwisk
-- {{pesel}} dla numeru PESEL
-- {{email}} dla adresów email
-- {{phone}} dla numerów telefonu
-- {{city}} dla miast
-- {{address}} dla adresów
-- {{date}} dla dat
-- {{company}} dla nazw firm
+Use these tokens:
+- {{name}} for first names
+- {{surname}} for surnames
+- {{pesel}} for PESEL numbers
+- {{email}} for email addresses
+- {{phone}} for phone numbers
+- {{city}} for cities
+- {{address}} for addresses
+- {{date}} for dates
+- {{company}} for company names
 
-Tekst do anonimizacji:
+Text to anonymize:
 {text}
 
-Zanonimizowany tekst:"""
+Anonymized text:"""
 
         response = self.generate(prompt)
         return response.strip()
 
     def synthesize_with_llm(self, anonymized_text: str) -> str:
         """
-        Generuje dane syntetyczne używając LLM.
+        Generate synthetic data using LLM.
 
         Args:
-            anonymized_text: Tekst z tokenami anonimizacji
+            anonymized_text: Text with anonymization tokens
 
         Returns:
-            Tekst z podstawionymi danymi syntetycznymi
+            Text with synthetic data substituted
         """
-        prompt = f"""Zastąp tokeny anonimizacji (np. {{name}}, {{city}}) realistycznymi,
-ale fikcyjnymi danymi po polsku. Zachowaj poprawną gramatykę (fleksję).
+        prompt = f"""Replace anonymization tokens (e.g., {{name}}, {{city}}) with realistic
+but fake Polish data. Preserve correct grammar (inflection).
 
-Tekst z tokenami:
+Text with tokens:
 {anonymized_text}
 
-Tekst z danymi syntetycznymi:"""
+Text with synthetic data:"""
 
         response = self.generate(prompt)
         return response.strip()
@@ -270,34 +269,34 @@ def download_pllum_model(
     model_name: str = "CYFRAGOVPL/pllum-12b-nc-chat-250715",
 ) -> bool:
     """
-    Pobiera model PLLUM do użytku offline.
+    Download PLLUM model for offline use.
 
-    UWAGA: Model jest duży (~24GB), pobieranie może zająć dużo czasu!
+    WARNING: Model is large (~24GB), download may take a long time!
 
     Args:
-        model_name: Nazwa modelu na Hugging Face
+        model_name: Model name on Hugging Face
 
     Returns:
-        True jeśli sukces
+        True if successful
     """
     print(f"\n{'='*60}")
-    print(f"📦 Pobieranie modelu PLLUM: {model_name}")
-    print("⚠️  UWAGA: Ten model jest bardzo duży (~24GB)!")
+    print(f"📦 Downloading PLLUM model: {model_name}")
+    print("⚠️  WARNING: This model is very large (~24GB)!")
     print('=' * 60)
 
     try:
         from transformers import AutoTokenizer, AutoModelForCausalLM
 
-        print("⏳ Pobieranie tokenizera...")
+        print("⏳ Downloading tokenizer...")
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        print("✅ Tokenizer pobrany!")
+        print("✅ Tokenizer downloaded!")
 
-        print("⏳ Pobieranie modelu (to może potrwać bardzo długo)...")
+        print("⏳ Downloading model (this may take a very long time)...")
         model = AutoModelForCausalLM.from_pretrained(model_name)
-        print("✅ Model PLLUM pobrany pomyślnie!")
+        print("✅ PLLUM model downloaded successfully!")
 
         return True
 
     except Exception as e:
-        print(f"❌ Błąd: {e}")
+        print(f"❌ Error: {e}")
         return False

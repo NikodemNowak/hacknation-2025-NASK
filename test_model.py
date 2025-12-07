@@ -7,7 +7,7 @@ TRAIN_DATA_PATH = "nask_train/original.txt"
 
 
 def load_all_lines(file_path: str) -> list[str]:
-    """Wczytuje wszystkie linie z pliku."""
+    """Load all lines from file."""
     with open(file_path, "r", encoding="utf-8") as f:
         return [line.strip() for line in f if line.strip()]
 
@@ -15,18 +15,18 @@ def load_all_lines(file_path: str) -> list[str]:
 def run_test():
     print(f"🔄 Ładowanie modelu z: {MODEL_PATH}...")
 
-    # 1. Inicjalizacja z nowym modelem (use_brackets=True jak w Colab)
+    # 1. Initialize with new model (use_brackets=True like in Colab)
     try:
         anonymizer = Anonymizer(ner_model_path=MODEL_PATH, use_brackets=True)
         print("✅ Model załadowany pomyślnie!")
-        # Włącz NER od razu
+        # Enable NER immediately
         anonymizer._init_ner_layer()
     except Exception as e:
         print(f"❌ Błąd ładowania modelu: {e}")
         print("Czy folder models/herbert_ner_v2 zawiera plik config.json?")
         return
 
-    # 2. Wczytaj WSZYSTKIE linie z danych treningowych
+    # 2. Load ALL lines from training data
     print(f"\n📂 Wczytywanie wszystkich linii z: {TRAIN_DATA_PATH}...")
     try:
         test_cases = load_all_lines(TRAIN_DATA_PATH)
@@ -44,7 +44,7 @@ def run_test():
     results = []
 
     for i, text in enumerate(test_cases, 1):
-        # Anonimizacja
+        # Anonymization
         result = anonymizer.anonymize(text)
         results.append((i, text, result))
 
@@ -60,26 +60,26 @@ def run_test():
                 flush=True,
             )
 
-    print()  # Nowa linia po progress bar
+    print()  # New line after progress bar
 
     elapsed_total = time.time() - start_time
     print(
         f"\n✅ Przetworzono {total} linii w {elapsed_total:.1f}s ({total/elapsed_total:.1f} linii/s)\n"
     )
 
-    # Wyświetl wyniki
+    # Display results
     for idx, original, anonymized in results:
         print(f"\n{'─' * 80}")
         print(f"📝 PRZYKŁAD {idx}/{total}")
         print(f"{'─' * 80}")
 
-        # Wyświetl oryginał (skrócony jeśli za długi)
+        # Display original (truncated if too long)
         display_text = (
             original if len(original) <= 500 else original[:500] + "..."
         )
         print(f"\n🔵 ORYGINAŁ:\n{display_text}")
 
-        # Wyświetl wynik (skrócony jeśli za długi)
+        # Display result (truncated if too long)
         display_result = (
             anonymized if len(anonymized) <= 500 else anonymized[:500] + "..."
         )

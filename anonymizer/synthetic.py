@@ -1,15 +1,14 @@
 """
-Moduł do generacji danych syntetycznych.
+Synthetic data module.
 
-Zastępuje tokeny anonimizacji ({name}, {city}, etc.) realistycznymi,
-ale fikcyjnymi danymi. Domyślnie wykorzystuje PLLuM, aby zastąpić tagi
-wiarygodnymi danymi, a w razie braku dostępu do API korzysta z lokalnych
-zbiorów przykładowych danych.
+Replaces anonymization tokens ({name}, {city}, etc.) with realistic but
+fake data. By default uses PLLuM; if API is unavailable, falls back to
+local sample data.
 
-Prompt dla PLLuM:
-"Jesteś asystentem danych. W podanym tekście zastąp wszystkie tagi typu
-{name}, {city} realistycznymi polskimi danymi, zachowując odmianę
- gramatyczną. Nie zmieniaj reszty tekstu."
+PLLuM prompt:
+"You are a data assistant. In the given text, replace all tokens like
+{name}, {city} with realistic Polish data, preserving grammatical form.
+Do not change the rest of the text."
 """
 
 import random
@@ -20,15 +19,15 @@ from typing import Dict, List, Optional
 from .pllum_client import PLLUMClient
 
 DEFAULT_PROMPT = (
-    "Jesteś asystentem danych. W podanym tekście zastąp wszystkie tagi typu "
-    "{{name}}, {{city}} realistycznymi polskimi danymi, zachowując odmianę gramatyczną. "
-    "Nie zmieniaj reszty tekstu.\n\nTekst:\n{input_text}\n\nWynik:"
+    "You are a data assistant. In the given text, replace all tokens like "
+    "{{name}}, {{city}} with realistic Polish data, preserving grammar. "
+    "Do not change the rest of the text.\n\nText:\n{input_text}\n\nResult:"
 )
 
 
 @dataclass
 class SyntheticData:
-    """Zbiór danych syntetycznych dla różnych kategorii."""
+    """Container for synthetic sample data."""
 
     names: List[str]
     surnames: List[str]
@@ -39,10 +38,8 @@ class SyntheticData:
 
 class SyntheticGenerator:
     """
-    Generator danych syntetycznych.
-
-    Zastępuje tokeny anonimizacji realistycznymi danymi (LLM lub lokalnie),
-    zachowując poprawność gramatyczną tekstu.
+    Generates synthetic replacements for tokens (LLM or local fallback)
+    while preserving grammar.
     """
 
     def __init__(
@@ -55,15 +52,15 @@ class SyntheticGenerator:
         prompt: Optional[str] = None,
     ):
         """
-        Inicjalizacja generatora.
+        Initialize generator.
 
         Args:
-            seed: Ziarno dla generatora losowego (dla powtarzalności)
-            use_llm: Czy używać PLLuM do syntezy (fallback do lokalnych danych)
-            api_key: Klucz API PLLuM (fallback do .env/ENV)
-            base_url: Adres API PLLuM
-            model_name: Nazwa modelu PLLuM
-            prompt: Niestandardowy prompt dla PLLuM
+            seed: Random seed (for reproducibility)
+            use_llm: Use PLLuM; fallback to local data if not available
+            api_key: PLLuM API key (env fallback)
+            base_url: PLLuM API base URL
+            model_name: PLLuM model name
+            prompt: Custom PLLuM prompt
         """
         if seed is not None:
             random.seed(seed)
@@ -80,7 +77,7 @@ class SyntheticGenerator:
         self._init_data()
 
     def _ensure_client(self) -> None:
-        """Leniewo inicjalizuje klienta PLLuM."""
+        """Lazy-init PLLuM client."""
         if self._pllum_client is not None or not self.use_llm:
             return
 
@@ -90,9 +87,9 @@ class SyntheticGenerator:
         self._pllum_client = PLLUMClient(**kwargs)
 
     def _init_data(self):
-        """Inicjalizuje zbiory danych syntetycznych (fallback offline)."""
+        """Initialize synthetic datasets (offline fallback)."""
 
-        # Polskie imiona (mianownik)
+        # Polish first names
         self.names_male = [
             "Adam",
             "Piotr",
@@ -134,7 +131,7 @@ class SyntheticGenerator:
 
         self.names = self.names_male + self.names_female
 
-        # Polskie nazwiska
+        # Polish surnames
         self.surnames = [
             "Nowak",
             "Kowalski",
@@ -158,7 +155,7 @@ class SyntheticGenerator:
             "Grabowski",
         ]
 
-        # Polskie miasta
+        # Polish cities
         self.cities = [
             "Warszawa",
             "Kraków",
@@ -182,7 +179,7 @@ class SyntheticGenerator:
             "Zabrze",
         ]
 
-        # Polskie ulice
+        # Polish streets
         self.streets = [
             "Główna",
             "Ogrodowa",
@@ -206,7 +203,7 @@ class SyntheticGenerator:
             "Piłsudskiego",
         ]
 
-        # Firmy (nazwy fikcyjne)
+        # Companies (fictional)
         self.companies = [
             "TechPol Sp. z o.o.",
             "Innova Systems S.A.",
@@ -222,7 +219,7 @@ class SyntheticGenerator:
             "Beta Industries",
         ]
 
-        # Mapowanie tagów na generators
+        # Map tags to generators
         self._generators: Dict[str, callable] = {
             "name": self._gen_name,
             "surname": self._gen_surname,
@@ -240,30 +237,30 @@ class SyntheticGenerator:
         }
 
     def _gen_name(self) -> str:
-        """Generuje losowe imię."""
+        """Generate random first name."""
         return random.choice(self.names)
 
     def _gen_surname(self) -> str:
-        """Generuje losowe nazwisko."""
+        """Generate random surname."""
         return random.choice(self.surnames)
 
     def _gen_city(self) -> str:
-        """Generuje losowe miasto."""
+        """Generate random city."""
         return random.choice(self.cities)
 
     def _gen_address(self) -> str:
-        """Generuje losowy adres."""
+        """Generate random address."""
         street = random.choice(self.streets)
         number = random.randint(1, 150)
         apartment = random.choice(["", f"/{random.randint(1, 50)}"])
         return f"ul. {street} {number}{apartment}"
 
     def _gen_company(self) -> str:
-        """Generuje losową nazwę firmy."""
+        """Generate random company."""
         return random.choice(self.companies)
 
     def _gen_phone(self) -> str:
-        """Generuje losowy numer telefonu."""
+        """Generate random phone."""
         prefix = random.choice(
             ["50", "51", "53", "60", "66", "69", "72", "78", "79", "88"]
         )
@@ -271,7 +268,7 @@ class SyntheticGenerator:
         return f"+48 {prefix}{number[:3]} {number[3:6]} {number[6:]}"
 
     def _gen_email(self) -> str:
-        """Generuje losowy email."""
+        """Generate random email."""
         name = random.choice(self.names).lower()
         surname = random.choice(self.surnames).lower()
         domain = random.choice(
@@ -281,7 +278,7 @@ class SyntheticGenerator:
         return f"{name}{separator}{surname}@{domain}"
 
     def _gen_pesel(self) -> str:
-        """Generuje losowy PESEL (syntetyczny, nie walidowany)."""
+        """Generate random PESEL (synthetic, not validated)."""
         year = random.randint(50, 99)
         month = random.randint(1, 12)
         day = random.randint(1, 28)
@@ -290,28 +287,28 @@ class SyntheticGenerator:
         return f"{year:02d}{month:02d}{day:02d}{series}{checksum}"
 
     def _gen_date(self) -> str:
-        """Generuje losową datę."""
+        """Generate random date."""
         day = random.randint(1, 28)
         month = random.randint(1, 12)
         year = random.randint(1980, 2023)
         return f"{day:02d}.{month:02d}.{year}"
 
     def _gen_age(self) -> str:
-        """Generuje losowy wiek."""
+        """Generate random age."""
         return str(random.randint(18, 80))
 
     def _gen_bank_account(self) -> str:
-        """Generuje losowy numer konta."""
+        """Generate random bank account."""
         digits = "".join([str(random.randint(0, 9)) for _ in range(26)])
         return f"PL{digits[:2]} {digits[2:6]} {digits[6:10]} {digits[10:14]} {digits[14:18]} {digits[18:22]} {digits[22:26]}"
 
     def _gen_credit_card(self) -> str:
-        """Generuje losowy numer karty."""
+        """Generate random credit card."""
         digits = "".join([str(random.randint(0, 9)) for _ in range(16)])
         return f"{digits[:4]} {digits[4:8]} {digits[8:12]} {digits[12:16]}"
 
     def _gen_document_number(self) -> str:
-        """Generuje losowy numer dowodu."""
+        """Generate random document number."""
         letters = "".join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=3))
         numbers = "".join([str(random.randint(0, 9)) for _ in range(6)])
         return f"{letters}{numbers}"
@@ -320,7 +317,7 @@ class SyntheticGenerator:
         return bool(re.search(r"\{[a-z\-]+\}", text))
 
     def _replace_tags_locally(self, anonymized_text: str) -> str:
-        """Fallback: zastępuje tagi lokalnie na bazie gotowych słowników."""
+        """Fallback: replace tags locally using sample dictionaries."""
         tag_pattern = re.compile(r"\{([a-z\-]+)\}")
 
         def replace_tag(match):
@@ -333,8 +330,8 @@ class SyntheticGenerator:
 
     def synthesize(self, anonymized_text: str) -> str:
         """
-        Zastępuje tokeny anonimizacji danymi syntetycznymi.
-        Używa PLLuM do generacji danych, a w razie braku dostępu – lokalnego fallbacku.
+        Replace tokens with synthetic data.
+        Uses PLLuM; falls back to local generation when unavailable.
         """
         if not anonymized_text or not self._has_tags(anonymized_text):
             return anonymized_text
@@ -356,5 +353,5 @@ class SyntheticGenerator:
         return self._replace_tags_locally(anonymized_text)
 
     def synthesize_batch(self, texts: List[str]) -> List[str]:
-        """Syntetyzuje wiele tekstów."""
+        """Synthesize many texts."""
         return [self.synthesize(text) for text in texts]

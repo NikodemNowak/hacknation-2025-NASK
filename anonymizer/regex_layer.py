@@ -1,21 +1,22 @@
 """
-Warstwa RegEx do anonimizacji danych o stałym formacie.
+RegEx layer for fixed-format data anonymization.
 
-Obsługiwane typy danych:
+Supported types:
 - PESEL -> {pesel}
 - E-mail -> {email}
-- Numer telefonu -> {phone}
-- Numer konta bankowego (IBAN) -> {bank-account}
-- Numer karty kredytowej -> {credit-card-number}
-- Numer dowodu osobistego -> {document-number}
+- Phone number -> {phone}
+- Bank account (IBAN) -> {bank-account}
+- Credit card -> {credit-card-number}
+- Document number -> {document-number}
+- Dates -> {date}
 
-Użycie:
+Usage:
     from anonymizer.regex_layer import RegexAnonymizer
 
     anonymizer = RegexAnonymizer()
     text = "Mój PESEL to 90010112345, a email jan@example.com"
     result = anonymizer.anonymize(text)
-    # "Mój PESEL to {pesel}, a email {email}"
+    # "Mój PESEL to [pesel], a email [email]"
 """
 
 import re
@@ -25,7 +26,7 @@ from dataclasses import dataclass
 from .utils import format_tag
 
 
-# Mapa zniekształceń OCR: litera -> cyfra
+# OCR distortion map: letter -> digit
 OCR_REPLACEMENTS = {
     'O': '0',
     'o': '0',
@@ -55,13 +56,13 @@ OCR_REPLACEMENTS = {
     'q': '9',
 }
 
-# Znaki które mogą być cyframi (dla regex)
+# Characters treated as digits in regex
 DIGIT_LIKE = r'0-9oOiIlL!|zZeEaAhHsStTbBgGqQ'
 
 
 @dataclass
 class AnonymizationResult:
-    """Wynik anonimizacji tekstu."""
+    """Result of anonymization."""
 
     original_text: str
     anonymized_text: str
@@ -78,15 +79,16 @@ def clean_to_digits(text: str) -> str:
 
 class RegexAnonymizer:
     """
-    Klasa do anonimizacji danych osobowych w tekście za pomocą wyrażeń regularnych.
+    Anonymizes fixed-format PII with regular expressions.
 
-    Obsługuje:
-    - PESEL (11 cyfr)
+    Supports:
+    - PESEL (11 digits)
     - E-mail
-    - Numery telefonów (polskie, różne formaty)
-    - Numery kont bankowych (IBAN)
-    - Numery kart kredytowych
-    - Numery dowodów osobistych (polskie)
+    - Phone numbers (PL formats)
+    - Bank accounts (IBAN)
+    - Credit cards
+    - Document numbers (PL)
+    - Dates
     """
 
     def __init__(self, use_brackets: bool = False):
@@ -101,11 +103,11 @@ class RegexAnonymizer:
         self._compile_patterns()
 
     def _format_tag(self, tag: str) -> str:
-        """Formatuje tag zgodnie z wybranym stylem."""
+        """Formats tag according to bracket style."""
         return format_tag(tag, self.use_brackets)
 
     def _compile_patterns(self):
-        """Kompiluje wszystkie wzorce regex."""
+        """Compile all regex patterns."""
 
         # PESEL - 11 cyfr, może mieć różne zniekształcenia
         self.pesel_pattern = re.compile(
@@ -178,7 +180,7 @@ class RegexAnonymizer:
         )
 
     def _is_valid_pesel(self, text: str) -> bool:
-        """Sprawdza czy tekst może być PESELem."""
+        """Validate if text can be a PESEL."""
         cleaned = re.sub(r'[\s\-]', '', text)
         cleaned = clean_to_digits(cleaned)
 
@@ -187,7 +189,7 @@ class RegexAnonymizer:
         return True
 
     def _is_valid_phone(self, text: str) -> bool:
-        """Sprawdza czy tekst może być numerem telefonu."""
+        """Validate if text can be a phone number."""
         cleaned = re.sub(r'[\s\-\.\(\)\+]', '', text)
         cleaned = clean_to_digits(cleaned)
 
@@ -201,13 +203,13 @@ class RegexAnonymizer:
         return False
 
     def _is_valid_email(self, text: str) -> bool:
-        """Sprawdza czy tekst może być emailem."""
+        """Validate if text can be an email."""
         if '@' not in text or '.' not in text.split('@')[-1]:
             return False
         return True
 
     def _is_valid_bank_account(self, text: str) -> bool:
-        """Sprawdza czy tekst może być numerem konta bankowego."""
+        """Validate if text can be a bank account."""
         cleaned = re.sub(r'[\s\-]', '', text.upper())
         if cleaned.startswith('PL'):
             cleaned = cleaned[2:]
@@ -220,13 +222,13 @@ class RegexAnonymizer:
         return False
 
     def _is_valid_credit_card(self, text: str) -> bool:
-        """Sprawdza czy tekst może być numerem karty kredytowej."""
+        """Validate if text can be a credit card."""
         cleaned = re.sub(r'[\s\-]', '', text)
         cleaned = clean_to_digits(cleaned)
         return len(cleaned) == 16 and cleaned.isdigit()
 
     def _is_valid_document_number(self, text: str) -> bool:
-        """Sprawdza czy tekst może być numerem dowodu osobistego."""
+        """Validate if text can be a document number."""
         cleaned = re.sub(r'[\s\-]', '', text.upper())
 
         # Format: ABC123456 (3 litery + 6 cyfr) lub AB1234567 (2 litery + 7 cyfr)
@@ -240,22 +242,16 @@ class RegexAnonymizer:
 
     def anonymize(self, text: str) -> str:
         """
-        Anonimizuje tekst zastępując dane osobowe odpowiednimi tagami.
+        Anonymize text by replacing fixed-format PII with tags.
 
-        Kolejność zastępowania (od najbardziej specyficznych):
-        1. Email (najbardziej charakterystyczny - zawiera @)
-        2. Numer konta bankowego (najdłuższy - 26 cyfr)
-        3. Karta kredytowa (16 cyfr)
-        4. Daty
-        5. PESEL (11 cyfr)
-        6. Numer dowodu osobistego (różne formaty)
-        7. Telefon (9 cyfr, ale różne formaty)
-
-        Args:
-            text: Tekst do anonimizacji
-
-        Returns:
-            Zanonimizowany tekst
+        Order (most specific first):
+        1. Email
+        2. Bank account (26 digits)
+        3. Credit card (16 digits)
+        4. Dates
+        5. PESEL
+        6. Document number
+        7. Phone
         """
         result = text
 
@@ -283,7 +279,7 @@ class RegexAnonymizer:
         return result
 
     def _replace_emails(self, text: str) -> str:
-        """Zamienia emaile na tag."""
+        """Replace emails with tag."""
 
         def replace(match):
             if self._is_valid_email(match.group(0)):
@@ -293,7 +289,7 @@ class RegexAnonymizer:
         return self.email_pattern.sub(replace, text)
 
     def _replace_bank_accounts(self, text: str) -> str:
-        """Zamienia numery kont na tag."""
+        """Replace bank accounts with tag."""
 
         def replace(match):
             if self._is_valid_bank_account(match.group(0)):
@@ -303,7 +299,7 @@ class RegexAnonymizer:
         return self.bank_account_pattern.sub(replace, text)
 
     def _replace_credit_cards(self, text: str) -> str:
-        """Zamienia numery kart na tag."""
+        """Replace credit cards with tag."""
 
         def replace(match):
             if self._is_valid_credit_card(match.group(0)):
@@ -313,7 +309,7 @@ class RegexAnonymizer:
         return self.credit_card_pattern.sub(replace, text)
 
     def _replace_dates(self, text: str) -> str:
-        """Zamienia daty na tag {date}."""
+        """Replace dates with {date} tag."""
 
         def replace(match):
             return self._format_tag('date')
@@ -321,7 +317,7 @@ class RegexAnonymizer:
         return self.date_pattern.sub(replace, text)
 
     def _replace_pesels(self, text: str) -> str:
-        """Zamienia numery PESEL na tag."""
+        """Replace PESEL numbers with tag."""
 
         def replace(match):
             if self._is_valid_pesel(match.group(0)):
@@ -331,7 +327,7 @@ class RegexAnonymizer:
         return self.pesel_pattern.sub(replace, text)
 
     def _replace_document_numbers(self, text: str) -> str:
-        """Zamienia numery dowodów na tag."""
+        """Replace document numbers with tag."""
 
         def replace(match):
             if self._is_valid_document_number(match.group(0)):
@@ -341,7 +337,7 @@ class RegexAnonymizer:
         return self.document_number_pattern.sub(replace, text)
 
     def _replace_phones(self, text: str) -> str:
-        """Zamienia numery telefonów na tag."""
+        """Replace phone numbers with tag."""
 
         def replace(match):
             if self._is_valid_phone(match.group(0)):
@@ -351,12 +347,7 @@ class RegexAnonymizer:
         return self.phone_pattern.sub(replace, text)
 
     def anonymize_detailed(self, text: str) -> AnonymizationResult:
-        """
-        Anonimizuje tekst i zwraca szczegółowy wynik z listą zamian.
-
-        Returns:
-            AnonymizationResult z oryginalnym tekstem, zanonimizowanym i listą zamian
-        """
+        """Return detailed anonymization result with replacements list."""
         anonymized = self.anonymize(text)
 
         replacements = []
