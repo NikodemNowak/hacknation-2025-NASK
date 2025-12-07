@@ -50,6 +50,8 @@ class SyntheticGenerator:
         base_url: Optional[str] = None,
         model_name: Optional[str] = None,
         prompt: Optional[str] = None,
+        use_brackets: bool = False,
+        offline: Optional[bool] = None,
     ):
         """
         Initialize generator.
@@ -66,6 +68,8 @@ class SyntheticGenerator:
             random.seed(seed)
 
         self.use_llm = use_llm
+        self.use_brackets = use_brackets
+        self.offline = offline
         self.prompt_template = prompt or DEFAULT_PROMPT
         self._client_params = {
             "api_key": api_key,
@@ -84,6 +88,13 @@ class SyntheticGenerator:
         kwargs = {
             k: v for k, v in self._client_params.items() if v is not None
         }
+        # Auto-switch to offline if no API key provided.
+        resolved_offline = (
+            self.offline
+            if self.offline is not None
+            else not kwargs.get("api_key")
+        )
+        kwargs["offline"] = resolved_offline
         self._pllum_client = PLLUMClient(**kwargs)
 
     def _init_data(self):
@@ -314,14 +325,19 @@ class SyntheticGenerator:
         return f"{letters}{numbers}"
 
     def _has_tags(self, text: str) -> bool:
-        return bool(re.search(r"\{[a-z\-]+\}", text))
+        """Detect tags in either {} or [] style."""
+        return bool(re.search(r"\{[a-z\-]+\}|\[[a-z\-]+\]", text))
+
+    def _normalize_to_curly(self, text: str) -> str:
+        """Convert [tag] to {tag} so LLM prompt stays consistent."""
+        return re.sub(r"\[([a-z\-]+)\]", r"{\1}", text)
 
     def _replace_tags_locally(self, anonymized_text: str) -> str:
         """Fallback: replace tags locally using sample dictionaries."""
-        tag_pattern = re.compile(r"\{([a-z\-]+)\}")
+        tag_pattern = re.compile(r"\{([a-z\-]+)\}|\[([a-z\-]+)\]")
 
         def replace_tag(match):
-            tag = match.group(1)
+            tag = match.group(1) or match.group(2)
             if tag in self._generators:
                 return self._generators[tag]()
             return match.group(0)
@@ -340,8 +356,9 @@ class SyntheticGenerator:
             try:
                 self._ensure_client()
                 if self._pllum_client:
+                    prompt_input = self._normalize_to_curly(anonymized_text)
                     prompt = self.prompt_template.format(
-                        input_text=anonymized_text
+                        input_text=prompt_input
                     )
                     response = self._pllum_client.generate(prompt)
                     if response:

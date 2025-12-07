@@ -46,6 +46,7 @@ class Anonymizer:
         pllum_api_key: Optional[str] = None,
         pllum_base_url: Optional[str] = None,
         pllum_model_name: Optional[str] = None,
+        pllum_offline: Optional[bool] = None,
     ):
         """
         Initializer for Anonymizer.
@@ -70,6 +71,7 @@ class Anonymizer:
         self.pllum_api_key = pllum_api_key
         self.pllum_base_url = pllum_base_url
         self.pllum_model_name = pllum_model_name
+        self.pllum_offline = pllum_offline
 
         self._regex_layer: Optional[RegexAnonymizer] = None
         self._ner_layer: Optional[NERAnonymizer] = None
@@ -92,15 +94,31 @@ class Anonymizer:
 
     def _init_synthetic_generator(self, use_llm: Optional[bool] = None):
         desired_use_llm = self.use_synthetic if use_llm is None else use_llm
+        # If no API key is available, force offline fallback to avoid raising.
+        offline = (
+            self.pllum_offline
+            if self.pllum_offline is not None
+            else not (
+                self.pllum_api_key
+                or os.environ.get("PLLLUM_API_KEY")
+                or os.environ.get("PLUM_API_KEY")
+                or os.environ.get("PLLUM_API_KEY")
+                or os.environ.get("API_KEY")
+            )
+        )
         if (
             self._synthetic_generator is None
             or self._synthetic_generator.use_llm != desired_use_llm
+            or self._synthetic_generator.use_brackets != self.use_brackets
+            or self._synthetic_generator.offline != offline
         ):
             self._synthetic_generator = SyntheticGenerator(
                 use_llm=desired_use_llm,
                 api_key=self.pllum_api_key,
                 base_url=self.pllum_base_url,
                 model_name=self.pllum_model_name,
+                use_brackets=self.use_brackets,
+                offline=offline,
             )
 
     def anonymize(
@@ -265,7 +283,7 @@ class Anonymizer:
             >>> model.synthesize("Mieszkam w {city}")
             'Mieszkam w Krakowie'
         """
-        self._init_synthetic_generator()
+        self._init_synthetic_generator(use_llm=True)
         return self._synthetic_generator.synthesize(anonymized_text)
 
     def synthesize_batch(self, texts: List[str]) -> List[str]:
