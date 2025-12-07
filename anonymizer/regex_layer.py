@@ -25,12 +25,38 @@ from dataclasses import dataclass
 from .utils import format_tag
 
 
+# Mapa zniekształceń OCR: litera -> cyfra
+OCR_REPLACEMENTS = {
+    'O': '0', 'o': '0',
+    'I': '1', 'i': '1', 'l': '1', 'L': '1', '!': '1', '|': '1',
+    'Z': '2', 'z': '2',
+    'E': '3', 'e': '3',
+    'A': '4', 'a': '4', 'H': '4', 'h': '4',
+    'S': '5', 's': '5',
+    'G': '6', 'g': '6',  # może być też 9
+    'T': '7', 't': '7',
+    'B': '8', 'b': '8',
+    'Q': '9', 'q': '9',
+}
+
+# Znaki które mogą być cyframi (dla regex)
+DIGIT_LIKE = r'0-9oOiIlL!|zZeEaAhHsStTbBgGqQ'
+
+
 @dataclass
 class AnonymizationResult:
     """Wynik anonimizacji tekstu."""
     original_text: str
     anonymized_text: str
     replacements: List[Tuple[str, str, int]]  # (original, tag, position)
+
+
+def clean_to_digits(text: str) -> str:
+    """Zamienia zniekształcenia OCR na cyfry."""
+    result = text
+    for char, digit in OCR_REPLACEMENTS.items():
+        result = result.replace(char, digit)
+    return result
 
 
 class RegexAnonymizer:
@@ -66,11 +92,7 @@ class RegexAnonymizer:
         
         # PESEL - 11 cyfr, może mieć różne zniekształcenia
         self.pesel_pattern = re.compile(
-            r'\b'
-            r'(?:'
-                r'[0-9oOlI!|]{11}'
-            r')'
-            r'\b',
+            rf'\b[{DIGIT_LIKE}]{{11}}\b',
             re.IGNORECASE
         )
         
@@ -85,55 +107,55 @@ class RegexAnonymizer:
         )
         
         # Telefon - różne polskie formaty (+ jest częścią tagu)
+        # Format: +48 XXX XXX XXX lub XXX XXX XXX lub XXX-XXX-XXX itp.
         self.phone_pattern = re.compile(
-            r'(?:\+\s*)?'  # opcjonalny + na początku (włączony do matcha)
-            r'(?:'
-                r'(?:[4hA]\s*[8B]\s+)?'  # opcjonalne 48
-                r'(?:[0-9oOlI!|BSsAaEeGgqQhHzZ]{2,3}[\s\-\.]*){3,4}[0-9oOlI!|BSsAaEeGgqQhHzZ]{2,3}'
-            r')',
+            rf'(?:\+\s*)?'  # opcjonalny +
+            rf'(?:[{DIGIT_LIKE}]{{2}}\s+)?'  # opcjonalne 48
+            rf'(?:[{DIGIT_LIKE}]{{2,3}}[\s\-\.]*)'  # pierwszy segment
+            rf'(?:[{DIGIT_LIKE}]{{2,3}}[\s\-\.]*)'  # drugi segment  
+            rf'(?:[{DIGIT_LIKE}]{{2,3}}[\s\-\.]*)?'  # trzeci segment (opcjonalny)
+            rf'[{DIGIT_LIKE}]{{2,3}}',  # ostatni segment
             re.IGNORECASE
         )
         
-        # Numer konta bankowego (IBAN polski) - 26 cyfr
+        # Numer konta bankowego (IBAN polski) - 26 cyfr ze zniekształceniami
         self.bank_account_pattern = re.compile(
-            r'\b'
-            r'(?:'
-                r'(?:PL\s*)?'
-                r'(?:[0-9oOlI!|\s]{2,4}[\s\-]?){6,7}'
-            r')'
-            r'\b',
+            rf'\b'
+            rf'(?:PL\s*)?'  # opcjonalny prefix PL
+            rf'(?:[{DIGIT_LIKE}]{{2,4}}[\s\-]?){{5,7}}'  # grupy 2-4 cyfr
+            rf'[{DIGIT_LIKE}]{{1,4}}'  # ostatnia grupa
+            rf'\b',
             re.IGNORECASE
         )
         
-        # Karta kredytowa - 16 cyfr
+        # Karta kredytowa - 16 cyfr ze zniekształceniami
         self.credit_card_pattern = re.compile(
-            r'\b'
-            r'(?:'
-                r'[0-9]{4}[\s\-]?'
-                r'[0-9]{4}[\s\-]?'
-                r'[0-9]{4}[\s\-]?'
-                r'[0-9]{4}'
-            r')'
-            r'\b'
+            rf'\b'
+            rf'[{DIGIT_LIKE}]{{4}}[\s\-]?'
+            rf'[{DIGIT_LIKE}]{{4}}[\s\-]?'
+            rf'[{DIGIT_LIKE}]{{4}}[\s\-]?'
+            rf'[{DIGIT_LIKE}]{{4}}'
+            rf'\b',
+            re.IGNORECASE
         )
         
         # Numer dowodu osobistego (polski)
+        # Format: ABC123456 lub 1234-5678-9012
         self.document_number_pattern = re.compile(
-            r'\b'
-            r'(?:'
-                r'[A-Za-z]{2,3}\s*[0-9oOlI!|]{4,6}'
-                r'|'
-                r'[0-9oOlI!|]{4}[\-\s][0-9oOlI!|]{4}[\-\s][0-9oOlI!|]{4}'
-            r')'
-            r'\b',
+            rf'\b'
+            rf'(?:'
+                rf'[A-Za-z]{{2,3}}\s*[{DIGIT_LIKE}]{{4,6}}'
+                rf'|'
+                rf'[{DIGIT_LIKE}]{{4}}[\-\s][{DIGIT_LIKE}]{{4}}[\-\s][{DIGIT_LIKE}]{{4}}'
+            rf')'
+            rf'\b',
             re.IGNORECASE
         )
     
     def _is_valid_pesel(self, text: str) -> bool:
         """Sprawdza czy tekst może być PESELem."""
-        cleaned = text.upper()
-        cleaned = cleaned.replace('O', '0').replace('I', '1').replace('L', '1')
-        cleaned = cleaned.replace('!', '1').replace('|', '1')
+        cleaned = re.sub(r'[\s\-]', '', text)
+        cleaned = clean_to_digits(cleaned)
         
         if not re.match(r'^\d{11}$', cleaned):
             return False
@@ -142,22 +164,16 @@ class RegexAnonymizer:
     def _is_valid_phone(self, text: str) -> bool:
         """Sprawdza czy tekst może być numerem telefonu."""
         cleaned = re.sub(r'[\s\-\.\(\)\+]', '', text)
-        cleaned = cleaned.upper()
+        cleaned = clean_to_digits(cleaned)
         
-        replacements = {
-            'O': '0', 'I': '1', 'L': '1', '!': '1', '|': '1',
-            'B': '8', 'S': '5', 'A': '4', 'E': '3', 'G': '9',
-            'Q': '9', 'H': '4', 'Z': '2'
-        }
-        for char, digit in replacements.items():
-            cleaned = cleaned.replace(char, digit)
-        
-        if cleaned.startswith('48'):
+        # Usuń prefix 48 jeśli jest
+        if cleaned.startswith('48') and len(cleaned) > 9:
             cleaned = cleaned[2:]
         
-        if not re.match(r'^\d{9}$', cleaned):
-            return False
-        return True
+        # Polski numer to 9 cyfr
+        if len(cleaned) == 9 and cleaned.isdigit():
+            return True
+        return False
     
     def _is_valid_email(self, text: str) -> bool:
         """Sprawdza czy tekst może być emailem."""
@@ -170,21 +186,30 @@ class RegexAnonymizer:
         cleaned = re.sub(r'[\s\-]', '', text.upper())
         if cleaned.startswith('PL'):
             cleaned = cleaned[2:]
-        cleaned = cleaned.replace('O', '0').replace('I', '1').replace('L', '1')
-        return len(cleaned) >= 20 and re.match(r'^\d+$', cleaned)
+        cleaned = clean_to_digits(cleaned)
+        
+        # IBAN polski ma 26 cyfr (24 + 2 cyfry kontrolne)
+        # Ale akceptujemy też krótsze formaty (20-26 cyfr)
+        if len(cleaned) >= 20 and len(cleaned) <= 28 and cleaned.isdigit():
+            return True
+        return False
     
     def _is_valid_credit_card(self, text: str) -> bool:
         """Sprawdza czy tekst może być numerem karty kredytowej."""
         cleaned = re.sub(r'[\s\-]', '', text)
+        cleaned = clean_to_digits(cleaned)
         return len(cleaned) == 16 and cleaned.isdigit()
     
     def _is_valid_document_number(self, text: str) -> bool:
         """Sprawdza czy tekst może być numerem dowodu osobistego."""
         cleaned = re.sub(r'[\s\-]', '', text.upper())
         
-        if re.match(r'^[A-Z]{2,3}\d{4,7}$', cleaned):
+        # Format: ABC123456 (3 litery + 6 cyfr) lub AB1234567 (2 litery + 7 cyfr)
+        if re.match(r'^[A-Z]{2,3}[0-9]{4,7}$', clean_to_digits(cleaned)):
             return True
-        if re.match(r'^\d{12}$', cleaned):
+        # Format: 1234-5678-9012 (12 cyfr)
+        cleaned_digits = clean_to_digits(cleaned)
+        if re.match(r'^\d{12}$', cleaned_digits):
             return True
         return False
 
