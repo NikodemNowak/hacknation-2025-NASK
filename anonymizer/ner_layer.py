@@ -117,7 +117,7 @@ class NERAnonymizer:
         normalized = normalized.split("-")[-1]
         return self._label_to_tag.get(normalized)
 
-    def extract_entities(self, text: str) -> List[NEREntity]:
+    def extract_entities(self, text: str, debug: bool = False) -> List[NEREntity]:
         """
         Wyodrębnia encje z tekstu i mapuje je na tagi anonimizacji.
         """
@@ -126,6 +126,10 @@ class NERAnonymizer:
 
         self._init_pipeline()
         predictions = self._pipeline(text)
+        if debug:
+            print(f"[DEBUG][NER] Surowe predykcje dla: {text!r}")
+            for pred in predictions:
+                print(f"  - {pred}")
 
         entities: List[NEREntity] = []
         for pred in predictions:
@@ -142,6 +146,15 @@ class NERAnonymizer:
                     tag=self._format_tag(tag),
                 )
             )
+        if debug:
+            if entities:
+                print("[DEBUG][NER] Zmapowane encje -> tagi:")
+                for ent in entities:
+                    print(
+                        f"  - {ent.label} ({ent.start}:{ent.end}) '{ent.text}' -> {ent.tag}"
+                    )
+            else:
+                print("[DEBUG][NER] Brak encji po mapowaniu.")
         return entities
 
     def anonymize(self, text: str) -> str:

@@ -1,4 +1,4 @@
-6# Dane Bez Twarzy - Rozwiązanie Zespołu all_in()
+# Dane Bez Twarzy - Rozwiązanie Zespołu all_in()
 
 Biblioteka do anonimizacji tekstów w języku polskim dla modelu PLLUM.  
 Zastępuje dane wrażliwe tokenami (np. `{name}`, `{city}`) oraz wspiera generację danych syntetycznych.
