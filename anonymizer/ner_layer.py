@@ -31,15 +31,14 @@ class NERAnonymizer:
     """
     Contextual anonymization with NLP (HerBERT).
 
-    Defaults to `allegro/herbert-base-cased`, but a fine-tuned model path
-    can be provided.
+    Defaults to `Nikod3m/hacknation-2025-NASK-herbert-ner-v2`, but a custom
+    model path can be provided.
     """
 
     def __init__(
         self,
         model_path: Optional[str] = None,
         use_brackets: bool = False,
-        local_files_only: bool = True,
         device: Optional[int] = None,
     ):
         """
@@ -48,12 +47,10 @@ class NERAnonymizer:
         Args:
             model_path: HF path/name to HerBERT token-class model
             use_brackets: Use [tag] if True, else {tag}
-            local_files_only: Load HF files only locally
             device: GPU index or -1 (CPU); auto-detect if None
         """
-        self.model_path = model_path or "allegro/herbert-base-cased"
+        self.model_path = model_path or "Nikod3m/hacknation-2025-NASK-herbert-ner-v2"
         self.use_brackets = use_brackets
-        self.local_files_only = local_files_only
         self.device = (
             device
             if device is not None
@@ -105,19 +102,32 @@ class NERAnonymizer:
         return f"{{{tag}}}"
 
     def _init_pipeline(self):
-        """Lazy-load HerBERT pipeline."""
+        """Lazy-load HerBERT pipeline (downloads from HF if not cached)."""
         if self._pipeline is not None:
             return
 
         try:
-            self._tokenizer = AutoTokenizer.from_pretrained(
-                self.model_path,
-                local_files_only=self.local_files_only,
-            )
-            self._model = AutoModelForTokenClassification.from_pretrained(
-                self.model_path,
-                local_files_only=self.local_files_only,
-            )
+            # First try to load locally, if fails - download from HuggingFace
+            try:
+                self._tokenizer = AutoTokenizer.from_pretrained(
+                    self.model_path,
+                    local_files_only=True,
+                )
+                self._model = AutoModelForTokenClassification.from_pretrained(
+                    self.model_path,
+                    local_files_only=True,
+                )
+            except OSError:
+                # Model not in cache - download it
+                print(f"\t[NER] Downloading model from HuggingFace: {self.model_path}")
+                self._tokenizer = AutoTokenizer.from_pretrained(
+                    self.model_path,
+                    local_files_only=False,
+                )
+                self._model = AutoModelForTokenClassification.from_pretrained(
+                    self.model_path,
+                    local_files_only=False,
+                )
             self._pipeline = pipeline(
                 "token-classification",
                 model=self._model,
@@ -127,8 +137,8 @@ class NERAnonymizer:
             )
         except Exception as exc:
             raise RuntimeError(
-                f"Nie można załadować modelu NER z '{self.model_path}': {exc}. "
-                "Uruchom: python download_models.py lub wskaż lokalną ścieżkę."
+                f"Cannot load NER model from '{self.model_path}': {exc}. "
+                "Check your internet connection or provide a local model path."
             ) from exc
 
     def _map_entity_group(self, entity_group: str) -> Optional[str]:
@@ -140,7 +150,7 @@ class NERAnonymizer:
         if tag:
             return tag
 
-        # Spróbuj bez prefiksów (np. B-PER/I-PER)
+        # Try without prefixes (e.g., B-PER/I-PER)
         normalized = normalized.split("-")[-1]
         return self._label_to_tag.get(normalized)
 

@@ -8,17 +8,22 @@ setup(
         "transformers>=4.36.0",
         "torch>=2.0.0",
         "langchain-openai>=0.1.0",
+        "huggingface-hub>=0.20.0",
     ],
     extras_require={
         "dev": [
             "pytest>=7.0.0",
             "pytest-cov>=4.0.0",
         ],
+        "pllum-local": [
+            "accelerate>=0.25.0",
+            "bitsandbytes>=0.41.0",
+        ],
     },
     python_requires=">=3.9",
     author="all_in()",
     author_email="",
-    description="Data anonymization tool for PLLUM model - Dane bez twarzy",
+    description="Polish text anonymization library using HerBERT NER + RegEx + PLLuM",
     long_description=(
         open("README.md", encoding="utf-8").read()
         if __import__("os").path.exists("README.md")
@@ -32,7 +37,6 @@ setup(
         "Intended Audience :: Science/Research",
         "Topic :: Text Processing :: Linguistic",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
-        "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -40,5 +44,5 @@ setup(
         "Programming Language :: Python :: 3.12",
         "Natural Language :: Polish",
     ],
-    keywords="anonymization, nlp, polish, pii, data-privacy, pllum",
+    keywords="anonymization, nlp, polish, pii, data-privacy, pllum, herbert, ner",
 )

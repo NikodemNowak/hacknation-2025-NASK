@@ -1,9 +1,14 @@
 # Core dependencies
 transformers>=4.36.0
 torch>=2.0.0
+huggingface-hub>=0.20.0
 
 # PLLUM API client
 langchain-openai>=0.1.0
+
+# For local PLLuM model (optional, requires good GPU)
+# accelerate>=0.25.0
+# bitsandbytes>=0.41.0
 
 # Development dependencies (optional)
 pytest>=7.0.0

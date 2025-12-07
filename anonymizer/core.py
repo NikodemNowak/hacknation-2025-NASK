@@ -40,8 +40,7 @@ class Anonymizer:
         self,
         use_regex: bool = True,
         use_ner: bool = True,
-        use_brackets: bool = False,
-        offline: bool = True,
+        use_brackets: bool = True,
         ner_model_path: Optional[str] = None,
         use_synthetic: bool = False,
         pllum_api_key: Optional[str] = None,
@@ -54,9 +53,7 @@ class Anonymizer:
         Args:
             use_regex: Whether to use RegEx layer (default True)
             use_ner: Whether to use NER layer (default True)
-            use_brackets: Use [tag] instead of {tag}
-            offline: Offline mode (True = does not download models from
-            internet)
+            use_brackets: Use [tag] instead of {tag} (default True)
             ner_model_path: Path to HerBERT model (token-classification)
             use_synthetic: Whether to run PLLuM layer at the end
             pllum_api_key: API key for PLLuM (fallback to .env/ENV)
@@ -66,7 +63,6 @@ class Anonymizer:
         self.use_regex = use_regex
         self.use_ner = use_ner
         self.use_brackets = use_brackets
-        self.offline = offline
         self.ner_model_path = ner_model_path or os.environ.get(
             "NER_MODEL_PATH"
         )
@@ -92,7 +88,6 @@ class Anonymizer:
             self._ner_layer = NERAnonymizer(
                 model_path=self.ner_model_path,
                 use_brackets=self.use_brackets,
-                local_files_only=self.offline,
             )
 
     def _init_synthetic_generator(self, use_llm: Optional[bool] = None):

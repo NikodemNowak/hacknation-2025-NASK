@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "anonymizer"
+version = "0.1.0"
+description = "Polish text anonymization library using HerBERT NER + RegEx + PLLuM"
+readme = "README.md"
+authors = [
+    {name = "all_in()", email = ""}
+]
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Text Processing :: Linguistic",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Natural Language :: Polish",
+]
+keywords = ["anonymization", "nlp", "polish", "pii", "data-privacy", "pllum", "herbert", "ner"]
+dependencies = [
+    "transformers>=4.36.0",
+    "torch>=2.0.0",
+    "langchain-openai>=0.1.0",
+    "huggingface-hub>=0.20.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+pllum-local = [
+    "accelerate>=0.25.0",
+    "bitsandbytes>=0.41.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/NikodemNowak/hacknation-2025-NASK"
+Repository = "https://github.com/NikodemNowak/hacknation-2025-NASK"
+
+[tool.setuptools.packages.find]
+include = ["anonymizer*"]
